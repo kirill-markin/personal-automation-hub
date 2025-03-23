@@ -12,6 +12,10 @@ backend/              # Main FastAPI backend
   core/               # Core application components
     config.py         # Environment configuration
     security.py       # Authentication and security
+terraform/            # AWS infrastructure as code 
+  main.tf             # EC2 instance and VPC configuration
+  variables.tf        # Infrastructure variables
+  outputs.tf          # Output values after deployment
 
 # Features
 - Notion webhook integration: Create tasks via HTTP requests
@@ -21,7 +25,13 @@ backend/              # Main FastAPI backend
 - Python 3.11+, FastAPI, Pydantic
 - Environment: .env file with API keys
 - Testing: pytest
-- Deployment: Docker + Docker Compose
+- Deployment: Docker + Docker Compose, Terraform for AWS EC2
 
 # Execution
 python run.py # Starts FastAPI server on http://localhost:8000 
+
+# AWS Deployment
+# First configure AWS CLI with your credentials and region:
+aws configure # Provide AWS access key, secret key, and region
+# Then run Terraform commands:
+cd terraform && terraform init && terraform apply # Deploys EC2 instance to AWS 

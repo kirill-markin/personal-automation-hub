@@ -1,0 +1,22 @@
+# AWS credentials and region should be configured via AWS CLI
+# Do not store credentials or region in this file
+
+# Project name (optional)
+project_name = "personal-automation-hub"
+
+# Network Configuration (optional, uses defaults if not specified)
+# vpc_cidr = "10.0.0.0/16"
+# public_subnet_cidr = "10.0.1.0/24" 
+# availability_zone = "us-east-1a"
+
+# EC2 Configuration
+instance_type = "t2.micro"
+key_name = "your-ssh-key-name"  # SSH key for EC2 access (required)
+
+# Application Configuration (required)
+# Notion API information - DO NOT COMMIT THESE VALUES
+notion_api_key = "your-notion-api-key"
+notion_database_id = "your-notion-database-id" 
+webhook_api_key = "your-webhook-api-key"
+
+# aws_region = "us-east-1"  # defaults to us-east-1 if not specified
