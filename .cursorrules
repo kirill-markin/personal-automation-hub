@@ -1,0 +1,27 @@
+# Personal Automation Hub
+# Python + FastAPI server for personal service integrations
+
+# Structure
+backend/              # Main FastAPI backend
+  api/                # API routes and endpoints
+    v1/               # API version 1
+    webhooks/         # Webhook handlers
+  models/             # Data models and schemas
+  services/           # Business logic and services
+    notion/           # Notion integration services
+  core/               # Core application components
+    config.py         # Environment configuration
+    security.py       # Authentication and security
+
+# Features
+- Notion webhook integration: Create tasks via HTTP requests
+- More integrations planned: Calendar sync, Perplexity API, etc.
+
+# Tech Stack
+- Python 3.11+, FastAPI, Pydantic
+- Environment: .env file with API keys
+- Testing: pytest
+- Deployment: Docker + Docker Compose
+
+# Execution
+python run.py # Starts FastAPI server on http://localhost:8000 
