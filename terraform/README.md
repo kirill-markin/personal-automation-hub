@@ -63,13 +63,13 @@ terraform apply
 After deployment, the output will include the EC2 public IP and DNS name. You can access the webhook at:
 
 ```
-http://<ec2_public_dns>:8000/api/v1/webhooks/notion/create_task
+http://<ec2_public_dns>:8000/api/v1/webhooks/notion-personal/create-task
 ```
 
 Example using curl:
 
 ```bash
-curl -X POST http://<ec2_public_dns>:8000/api/v1/webhooks/notion/create_task \
+curl -X POST http://<ec2_public_dns>:8000/api/v1/webhooks/notion-personal/create-task \
     -H "X-API-Key: your_webhook_api_key" \
     -H "Content-Type: application/json" \
     -d '{"title": "My first task"}'

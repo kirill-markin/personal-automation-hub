@@ -45,7 +45,7 @@ The API will be available at http://localhost:8000
 Create a Notion task using cURL:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/webhooks/notion/create_task \
+curl -X POST http://localhost:8000/api/v1/webhooks/notion-personal/create-task \
     -H "X-API-Key: your_webhook_api_key" \
     -H "Content-Type: application/json" \
     -d '{"title": "My first task"}'

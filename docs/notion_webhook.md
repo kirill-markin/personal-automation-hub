@@ -6,7 +6,7 @@ A simple API endpoint that allows creating tasks in Notion databases via HTTP re
 ## How It Works
 
 ### Architecture
-- **API Endpoint**: FastAPI handles incoming requests at `/api/v1/webhooks/notion/create_task`
+- **API Endpoint**: FastAPI handles incoming requests at `/api/v1/webhooks/notion-personal/create-task`
 - **Authentication**: API key validation using a header-based approach
 - **Notion Client**: Communicates with Notion API to create database entries
 
@@ -60,7 +60,7 @@ WEBHOOK_API_KEY=your_secure_webhook_key
 To create a task, send a POST request:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/webhooks/notion/create_task \
+curl -X POST http://localhost:8000/api/v1/webhooks/notion-personal/create-task \
     -H "X-API-Key: your_webhook_api_key" \
     -H "Content-Type: application/json" \
     -d '{"title": "Task title"}'

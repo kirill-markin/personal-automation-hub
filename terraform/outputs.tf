@@ -22,5 +22,5 @@ output "ec2_public_dns" {
 # Application URLs
 output "webhook_url" {
   description = "The webhook URL for the Notion integration"
-  value       = "http://${aws_instance.app_server.public_dns}:8000/api/v1/webhooks/notion/create_task"
+  value       = "http://${aws_instance.app_server.public_dns}:8000/api/v1/webhooks/notion-personal/create-task"
 } 

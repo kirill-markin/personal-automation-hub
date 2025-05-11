@@ -9,11 +9,11 @@ router = APIRouter()
 
 
 @router.post(
-    "/notion/create_task",
+    "/notion-personal/create-task",
     response_model=NotionTaskResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_notion_task(
+async def create_notion_personal_task(
     task: NotionTaskCreate,
     api_key: Annotated[str, Depends(validate_api_key)],
 ) -> NotionTaskResponse:
