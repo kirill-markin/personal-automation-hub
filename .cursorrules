@@ -30,6 +30,14 @@ terraform/            # AWS infrastructure as code
 # Execution
 python run.py # Starts FastAPI server on http://localhost:8000 
 
+# Deployment Workflow
+# IMPORTANT: Production deployment follows this specific workflow:
+# 1. Develop and test locally first (python run.py)
+# 2. Commit and push changes to the public GitHub repository (main branch)
+# 3. Run terraform apply from the terraform directory to update production
+# Note: EC2 instance pulls code directly from GitHub, not your local machine
+# Changes must be in GitHub repo before they appear in production
+
 # AWS Deployment
 # First configure AWS CLI with your credentials and region:
 aws configure # Provide AWS access key, secret key, and region
