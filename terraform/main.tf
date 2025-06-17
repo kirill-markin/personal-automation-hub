@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
+      version = "~> 5.97.0"
     }
   }
   required_version = ">= 1.0.0"
@@ -136,9 +136,12 @@ resource "aws_instance" "app_server" {
     # Install dependencies
     yum update -y
     amazon-linux-extras install docker -y
+    amazon-linux-extras install nginx1 -y
     service docker start
+    service nginx start
     usermod -a -G docker ec2-user
     chkconfig docker on
+    chkconfig nginx on
     yum install -y git
 
     # Install docker-compose
@@ -150,20 +153,110 @@ resource "aws_instance" "app_server" {
     cd /opt/app
     git clone https://github.com/kirill-markin/personal-automation-hub.git .
 
-    # Create environment file
-    cat > /opt/app/.env <<EOL
-    NOTION_API_KEY=${var.notion_api_key}
-    NOTION_DATABASE_ID=${var.notion_database_id}
-    WEBHOOK_API_KEY=${var.webhook_api_key}
-    EOL
+    # Create environment file with proper values and ONLY environment variables
+    cat > /opt/app/.env << EOF_ENV
+NOTION_API_KEY=${var.notion_api_key}
+NOTION_DATABASE_ID=${var.notion_database_id}
+WEBHOOK_API_KEY=${var.webhook_api_key}
+EOF_ENV
+
+    # Create Nginx config based on whether domain is set
+    if [ "${var.domain_name != null ? var.domain_name : ""}" != "" ]; then
+      # Create HTTPS config
+      cat > /etc/nginx/conf.d/app.conf << EOF_NGINX
+server {
+    listen 80;
+    server_name ${var.domain_name};
+
+    # Redirect HTTP to HTTPS
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${var.domain_name};
+
+    # SSL Configuration (will be updated by Certbot)
+    ssl_certificate /etc/letsencrypt/live/${var.domain_name}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${var.domain_name}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF_NGINX
+    else
+      # Create HTTP only config
+      cat > /etc/nginx/conf.d/app.conf << EOF_NGINX
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF_NGINX
+    fi
+
+    # Create initial self-signed certificate directory structure to prevent Nginx errors
+    mkdir -p /etc/nginx/ssl/
+    
+    # Restart Nginx to apply the new configuration
+    service nginx restart
+
+    # Install Certbot for SSL if domain is specified
+    if [ "${var.domain_name != null ? var.domain_name : ""}" != "" ]; then
+      echo "Setting up SSL for domain ${var.domain_name}"
+      # Install Certbot
+      amazon-linux-extras install epel -y
+      yum install -y certbot python2-certbot-nginx
+      
+      # Stop Nginx temporarily to allow Certbot to bind to port 80
+      service nginx stop
+      
+      # Get certificate
+      certbot certonly --standalone --non-interactive --agree-tos \
+        --email admin@${var.domain_name} \
+        -d ${var.domain_name} \
+        --preferred-challenges http
+      
+      # Restart Nginx to pick up the new certificate
+      service nginx start
+      
+      # Set up certificate renewal cron job
+      echo "0 3 * * * /usr/bin/certbot renew --quiet --post-hook 'service nginx reload'" > /etc/cron.d/certbot-renew
+    fi
 
     # Build and start the container
     cd /opt/app
-    docker-compose up -d
+    /usr/local/bin/docker-compose up -d
   EOF
 
   tags = {
     Name = "${var.project_name}-server"
+  }
+}
+
+# Elastic IP for stable addressing
+resource "aws_eip" "app_eip" {
+  instance = aws_instance.app_server.id
+  
+  tags = {
+    Name = "${var.project_name}-eip"
   }
 }
 

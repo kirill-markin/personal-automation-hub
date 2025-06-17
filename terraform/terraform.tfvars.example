@@ -9,14 +9,21 @@ project_name = "personal-automation-hub"
 # public_subnet_cidr = "10.0.1.0/24" 
 # availability_zone = "us-east-1a"
 
+# Region Configuration (optional)
+# aws_region = "us-east-1"  # defaults to us-east-1 if not specified
+
 # EC2 Configuration
 instance_type = "t2.micro"
-key_name = "your-ssh-key-name"  # SSH key for EC2 access (required)
+key_name = "your-key-pair-name"  # Required for SSH access
 
 # Application Configuration (required)
 # Notion API information - DO NOT COMMIT THESE VALUES
 notion_api_key = "your-notion-api-key"
-notion_database_id = "your-notion-database-id" 
+notion_database_id = "your-notion-database-id"
 webhook_api_key = "your-webhook-api-key"
 
-# aws_region = "us-east-1"  # defaults to us-east-1 if not specified
+# Domain Configuration (optional)
+domain_name = "your-domain.example.com"  # Set for HTTPS/SSL
+
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and fill in your values

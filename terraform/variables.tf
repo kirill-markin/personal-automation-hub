@@ -62,4 +62,10 @@ variable "webhook_api_key" {
   description = "The webhook API key"
   type        = string
   sensitive   = true
+}
+
+variable "domain_name" {
+  description = "The domain name for the application (used for SSL certificate)"
+  type        = string
+  default     = null
 } 

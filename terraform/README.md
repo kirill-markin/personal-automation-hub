@@ -1,6 +1,6 @@
 # Terraform Infrastructure for Personal Automation Hub
 
-This directory contains Terraform configurations to deploy the Personal Automation Hub infrastructure to AWS.
+This directory contains Terraform configuration to deploy the Personal Automation Hub application to AWS.
 
 ## Infrastructure Components
 
@@ -11,8 +11,34 @@ This directory contains Terraform configurations to deploy the Personal Automati
 
 ## Prerequisites
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0.0
 - AWS CLI configured with appropriate credentials
+- Terraform installed locally
+- SSH key pair set up in your AWS account for EC2 access
+
+## Configuration
+
+1. Copy the example variables file:
+   ```bash
+   cp terraform.tfvars.example terraform.tfvars
+   ```
+
+2. Edit `terraform.tfvars` and add your variables:
+   - Required: `notion_api_key`, `notion_database_id`, `webhook_api_key`, `key_name`
+   - Optional: Override any default settings as needed
+
+## HTTPS Configuration (Optional)
+
+To enable HTTPS with a valid SSL certificate:
+
+1. Ensure you have a domain name with DNS pointing to your AWS instance
+2. Add your domain name to `terraform.tfvars`:
+   ```
+   domain_name = "your-domain.example.com"
+   ```
+3. When deploying, Terraform will automatically:
+   - Configure Nginx for HTTPS
+   - Install Certbot and obtain a Let's Encrypt certificate
+   - Configure automatic certificate renewal
 
 ## AWS Credentials Configuration
 
@@ -28,37 +54,24 @@ You will be prompted to enter:
 - Default region (use `us-east-1`)
 - Default output format (optional)
 
-## Deployment Steps
+## Deployment
 
-### 1. Prepare Environment Variables
-
-Create a `terraform.tfvars` file from the example:
+Run the following commands from this directory:
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars
+terraform init    # Initialize terraform
+terraform plan    # Preview changes
+terraform apply   # Apply changes and deploy
 ```
 
-Edit `terraform.tfvars` to add your sensitive values:
+After successful deployment, the outputs will show the public IP and domain name of your instance.
 
-```
-# Only add application secrets, NOT AWS credentials
-notion_api_key = "your-notion-api-key"
-notion_database_id = "your-notion-database-id"
-webhook_api_key = "your-secure-webhook-key"
-key_name = "your-ssh-key-name"  # The SSH key for EC2 access
-```
+## Managing the Infrastructure
 
-Note: Do NOT add AWS credentials to terraform.tfvars. Use AWS CLI configuration instead.
+- To update the infrastructure: Make changes and run `terraform apply`
+- To tear down: `terraform destroy`
 
-### 2. Deploy the Infrastructure
-
-```bash
-terraform init
-terraform plan
-terraform apply
-```
-
-### 3. Access the Service
+## Access the Service
 
 After deployment, the output will include the EC2 public IP and DNS name. You can access the webhook at:
 
