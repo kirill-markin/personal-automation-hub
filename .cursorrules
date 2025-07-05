@@ -40,6 +40,29 @@ Start the FastAPI server:
 python run.py  # Starts FastAPI server on http://localhost:8000
 ```
 
+## Local Testing Rules
+
+**IMPORTANT**: When testing locally with terminal commands, ALWAYS load environment variables from .env file first:
+
+```bash
+# Load environment variables from .env file
+source <(grep -v '^#' .env | sed 's/^/export /')
+
+# OR load specific variables
+export WEBHOOK_API_KEY=$(grep WEBHOOK_API_KEY .env | cut -d'=' -f2)
+
+# Then use the environment variable in commands
+curl -X POST "http://localhost:8000/api/v1/webhooks/notion-personal/create-task" \
+  -H "X-API-Key: $WEBHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test task", "body": "Test content"}'
+```
+
+**Example testing workflow:**
+1. Start server: `python run.py`
+2. Load env vars: `source <(grep -v '^#' .env | sed 's/^/export /')`
+3. Test endpoint: `curl -X POST "http://localhost:8000/api/v1/webhooks/notion-personal/create-task" -H "X-API-Key: $WEBHOOK_API_KEY" -H "Content-Type: application/json" -d '{"title": "Test"}'`
+
 ## Deployment Workflow
 
 **IMPORTANT**: Production deployment follows this specific workflow:
