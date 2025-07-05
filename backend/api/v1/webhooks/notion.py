@@ -18,10 +18,10 @@ async def create_notion_personal_task(
     api_key: Annotated[str, Depends(validate_api_key)],
 ) -> NotionTaskResponse:
     """
-    Create a task in Notion database.
+    Create a task in Notion database with optional body content.
     """
     try:
-        task_id = notion_service.create_task(task.title)
+        task_id = notion_service.create_task(title=task.title, body=task.body)
         return NotionTaskResponse(success=True, task_id=task_id)
     except Exception as e:
         raise HTTPException(

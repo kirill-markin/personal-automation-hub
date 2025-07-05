@@ -24,6 +24,8 @@ terraform/            # AWS infrastructure as code
 ## Features
 
 - Notion webhook integration: Create tasks via HTTP requests
+  - Task title (required): Sets the page name in Notion
+  - Task body (optional): Adds content as a paragraph block inside the page
 - More integrations planned: Calendar sync, Perplexity API, etc.
 
 ## Tech Stack
@@ -51,17 +53,27 @@ source <(grep -v '^#' .env | sed 's/^/export /')
 # OR load specific variables
 export WEBHOOK_API_KEY=$(grep WEBHOOK_API_KEY .env | cut -d'=' -f2)
 
-# Then use the environment variable in commands
+# Then test with title only
 curl -X POST "http://localhost:8000/api/v1/webhooks/notion-personal/create-task" \
   -H "X-API-Key: $WEBHOOK_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"title": "Test task", "body": "Test content"}'
+  -d '{"title": "Test task"}'
+
+# Or test with title and body content
+curl -X POST "http://localhost:8000/api/v1/webhooks/notion-personal/create-task" \
+  -H "X-API-Key: $WEBHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test task", "body": "Test content that will appear as paragraph in Notion"}'
 ```
 
 **Example testing workflow:**
 1. Start server: `python run.py`
 2. Load env vars: `source <(grep -v '^#' .env | sed 's/^/export /')`
 3. Test endpoint: `curl -X POST "http://localhost:8000/api/v1/webhooks/notion-personal/create-task" -H "X-API-Key: $WEBHOOK_API_KEY" -H "Content-Type: application/json" -d '{"title": "Test"}'`
+
+**Notion task API parameters:**
+- `title` (required): The task title - becomes the page name in Notion
+- `body` (optional): Text content - becomes a paragraph block inside the page
 
 ## Deployment Workflow
 

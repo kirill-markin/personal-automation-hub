@@ -5,6 +5,8 @@ A personal automation hub for integrating various services.
 ## Features
 
 - Notion webhook integration for creating tasks via HTTP requests
+  - Support for task title (required)
+  - Support for task body content (optional)
 
 ## Setup
 
@@ -42,7 +44,7 @@ The API will be available at http://localhost:8000
 
 ## Example Usage (Local Development)
 
-Create a Notion task using cURL:
+### Create a Notion task with title only
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/webhooks/notion-personal/create-task \
@@ -50,6 +52,19 @@ curl -X POST http://localhost:8000/api/v1/webhooks/notion-personal/create-task \
     -H "Content-Type: application/json" \
     -d '{"title": "My first task"}'
 ```
+
+### Create a Notion task with title and body content
+
+```bash
+curl -X POST http://localhost:8000/api/v1/webhooks/notion-personal/create-task \
+    -H "X-API-Key: your_webhook_api_key" \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Task with content", "body": "This is the detailed content that will appear as a paragraph in the Notion page."}'
+```
+
+**Request body parameters:**
+- `title` (required): The task title that will appear as the page name
+- `body` (optional): Text content that will be added as a paragraph block inside the page
 
 Response:
 ```json
@@ -87,6 +102,7 @@ grep "webhook_api_key" terraform.tfvars
 
 ### Complete Production Example
 
+#### Task with title only:
 ```bash
 # Get the URL first
 WEBHOOK_URL=$(cd terraform && terraform output -raw webhook_url_stable)
@@ -99,6 +115,14 @@ curl -X POST "$WEBHOOK_URL" \
     -H "X-API-Key: $API_KEY" \
     -H "Content-Type: application/json" \
     -d '{"title": "Task created via production API"}'
+```
+
+#### Task with title and body content:
+```bash
+curl -X POST "$WEBHOOK_URL" \
+    -H "X-API-Key: $API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Detailed task", "body": "This task includes detailed instructions and context that will be visible when opening the page in Notion."}'
 ```
 
 ### Production URL Options
@@ -117,8 +141,15 @@ cd terraform
 WEBHOOK_URL=$(terraform output -raw webhook_url_stable)
 API_KEY=$(grep "webhook_api_key" terraform.tfvars | cut -d'"' -f2)
 
+# Test with title only
 curl -X POST "$WEBHOOK_URL" \
     -H "X-API-Key: $API_KEY" \
     -H "Content-Type: application/json" \
     -d '{"title": "Production test task"}'
+
+# Test with title and body
+curl -X POST "$WEBHOOK_URL" \
+    -H "X-API-Key: $API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Production test with content", "body": "This is a test task with body content to verify the API is working correctly."}'
 ```
