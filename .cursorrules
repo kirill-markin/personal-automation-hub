@@ -1,7 +1,10 @@
 # Personal Automation Hub
-# Python + FastAPI server for personal service integrations
 
-# Structure
+Python + FastAPI server for personal service integrations
+
+## Project Structure
+
+```
 backend/              # Main FastAPI backend
   api/                # API routes and endpoints
     v1/               # API version 1
@@ -16,30 +19,79 @@ terraform/            # AWS infrastructure as code
   main.tf             # EC2 instance and VPC configuration
   variables.tf        # Infrastructure variables
   outputs.tf          # Output values after deployment
+```
 
-# Features
+## Features
+
 - Notion webhook integration: Create tasks via HTTP requests
 - More integrations planned: Calendar sync, Perplexity API, etc.
 
-# Tech Stack
+## Tech Stack
+
 - Python 3.11+, FastAPI, Pydantic
 - Environment: .env file with API keys
 - Testing: pytest
 - Deployment: Docker + Docker Compose, Terraform for AWS EC2
 
-# Execution
-python run.py # Starts FastAPI server on http://localhost:8000 
+## Local Development
 
-# Deployment Workflow
-# IMPORTANT: Production deployment follows this specific workflow:
-# 1. Develop and test locally first (python run.py)
-# 2. Commit and push changes to the public GitHub repository (main branch)
-# 3. Run terraform apply from the terraform directory to update production
-# Note: EC2 instance pulls code directly from GitHub, not your local machine
-# Changes must be in GitHub repo before they appear in production
+Start the FastAPI server:
+```bash
+python run.py  # Starts FastAPI server on http://localhost:8000
+```
 
-# AWS Deployment
-# First configure AWS CLI with your credentials and region:
-aws configure # Provide AWS access key, secret key, and region
-# Then run Terraform commands:
-cd terraform && terraform init && terraform apply # Deploys EC2 instance to AWS 
+## Deployment Workflow
+
+**IMPORTANT**: Production deployment follows this specific workflow:
+
+1. Develop and test locally first (`python run.py`)
+2. Commit and push changes to the public GitHub repository (main branch)
+3. Run `terraform apply` from the terraform directory to update production
+
+> **Note**: EC2 instance pulls code directly from GitHub, not your local machine. Changes must be in GitHub repo before they appear in production.
+
+## AWS Deployment
+
+### Initial Setup
+
+First configure AWS CLI with your credentials and region:
+```bash
+aws configure  # Provide AWS access key, secret key, and region
+```
+
+Then run Terraform commands:
+```bash
+cd terraform && terraform init && terraform apply  # Deploys EC2 instance to AWS
+```
+
+## Production URLs and API Keys
+
+### How to Find Current Production Info
+
+1. **Production webhook URL:**
+   ```bash
+   cd terraform && terraform output webhook_url_stable
+   ```
+
+2. **API key:**
+   ```bash
+   grep "webhook_api_key" terraform/terraform.tfvars
+   ```
+
+3. **All available URLs:**
+   ```bash
+   terraform output  # (from terraform directory)
+   ```
+
+4. **Quick test:**
+   ```bash
+   WEBHOOK_URL=$(cd terraform && terraform output -raw webhook_url_stable)
+   API_KEY=$(grep "webhook_api_key" terraform/terraform.tfvars | cut -d'"' -f2)
+   curl -X POST "$WEBHOOK_URL" -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" -d '{"title": "Test task"}'
+   ```
+
+### Production URL Options
+
+- **webhook_url_stable**: Stable URL with Elastic IP (recommended)
+- **webhook_url_stable_http**: Nginx port 80 URL
+- **webhook_url**: Current IP URL (may change on restart) 

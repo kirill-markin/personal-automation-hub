@@ -40,7 +40,7 @@ The API will be available at http://localhost:8000
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-## Example Usage
+## Example Usage (Local Development)
 
 Create a Notion task using cURL:
 
@@ -54,4 +54,71 @@ curl -X POST http://localhost:8000/api/v1/webhooks/notion-personal/create-task \
 Response:
 ```json
 {"success":true,"task_id":"1bf02949-83d9-81fe-9ff8-e6ede9dc950c"}
+```
+
+## Production Usage (AWS Deployment)
+
+### Finding the Production URL
+
+To get the current production webhook URL:
+
+1. **Navigate to terraform directory:**
+   ```bash
+   cd terraform
+   ```
+
+2. **Get the stable production URL:**
+   ```bash
+   terraform output webhook_url_stable
+   ```
+   This will show you the current stable URL using Elastic IP, e.g.:
+   ```
+   http://ec2-YOUR-ELASTIC-IP.compute-1.amazonaws.com:8000/api/v1/webhooks/notion-personal/create-task
+   ```
+
+### Finding the API Key
+
+The webhook API key is stored in `terraform/terraform.tfvars`:
+
+```bash
+# From terraform directory
+grep "webhook_api_key" terraform.tfvars
+```
+
+### Complete Production Example
+
+```bash
+# Get the URL first
+WEBHOOK_URL=$(cd terraform && terraform output -raw webhook_url_stable)
+
+# Get the API key (replace with your actual key from terraform.tfvars)
+API_KEY="your_webhook_api_key_from_terraform_tfvars"
+
+# Create a task
+curl -X POST "$WEBHOOK_URL" \
+    -H "X-API-Key: $API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Task created via production API"}'
+```
+
+### Production URL Options
+
+- **Stable URL (port 8000):** `terraform output webhook_url_stable`
+- **Nginx URL (port 80):** `terraform output webhook_url_stable_http`
+- **Current IP URL:** `terraform output webhook_url`
+
+**Recommended:** Use the stable URL with Elastic IP for consistent access.
+
+### Quick Production Test
+
+```bash
+# From project root
+cd terraform
+WEBHOOK_URL=$(terraform output -raw webhook_url_stable)
+API_KEY=$(grep "webhook_api_key" terraform.tfvars | cut -d'"' -f2)
+
+curl -X POST "$WEBHOOK_URL" \
+    -H "X-API-Key: $API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Production test task"}'
 ```
