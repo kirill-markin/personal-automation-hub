@@ -21,6 +21,21 @@ A personal automation hub for integrating various services.
 
 ## Configuration
 
+### Environment Variables Management
+
+**IMPORTANT**: This project uses two configuration files that must be kept in sync:
+
+1. **`.env`** - For local development
+2. **`terraform/terraform.tfvars`** - For production deployment
+
+Both files contain the same environment variables, but with different values:
+- `.env` contains local/development values
+- `terraform.tfvars` contains production values for AWS deployment
+
+**You must manually ensure both files are updated when adding new variables or changing existing ones.**
+
+### Local Configuration (.env)
+
 In your `.env` file, configure the following variables:
 
 ```
@@ -28,6 +43,18 @@ NOTION_API_KEY=secret_your_notion_api_key
 NOTION_DATABASE_ID=your_notion_database_id
 WEBHOOK_API_KEY=your_secure_api_key
 ```
+
+### Production Configuration (terraform.tfvars)
+
+The same variables must be configured in `terraform/terraform.tfvars` with production values:
+
+```
+webhook_api_key = "your_production_webhook_api_key"
+notion_api_key = "secret_your_production_notion_api_key"
+notion_database_id = "your_production_notion_database_id"
+```
+
+**Note**: Variable names in terraform.tfvars use snake_case format as required by Terraform.
 
 ## Running the Application
 

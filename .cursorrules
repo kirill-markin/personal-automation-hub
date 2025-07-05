@@ -35,6 +35,34 @@ terraform/            # AWS infrastructure as code
 - Testing: pytest
 - Deployment: Docker + Docker Compose, Terraform for AWS EC2
 
+## Environment Variables Management
+
+**CRITICAL**: This project uses two configuration files that must be kept in sync:
+
+1. **`.env`** (root directory) - For local development
+2. **`terraform/terraform.tfvars`** - For production deployment on AWS
+
+### Synchronization Rules
+
+- Both files contain the same environment variables
+- `.env` has local/development values
+- `terraform.tfvars` has production values
+- **You must manually sync both files when adding/changing variables**
+- Variable names in terraform.tfvars use snake_case format (e.g., `webhook_api_key`)
+- Variable names in .env use UPPER_CASE format (e.g., `WEBHOOK_API_KEY`)
+
+### File Locations
+
+- Local config: `.env` (root directory)
+- Production config: `terraform/terraform.tfvars`
+
+### Example Sync Pattern
+
+When adding a new variable:
+1. Add to `.env`: `NEW_VARIABLE=local_value`
+2. Add to `terraform.tfvars`: `new_variable = "production_value"`
+3. Update both backend/core/config.py and terraform/variables.tf if needed
+
 ## Local Development
 
 Start the FastAPI server:
@@ -112,6 +140,8 @@ cd terraform && terraform init && terraform apply  # Deploys EC2 instance to AWS
    ```bash
    grep "webhook_api_key" terraform/terraform.tfvars
    ```
+
+**REMINDER**: Ensure `terraform.tfvars` contains production values that correspond to your `.env` local values. Both files must be manually kept in sync!
 
 3. **All available URLs:**
    ```bash
