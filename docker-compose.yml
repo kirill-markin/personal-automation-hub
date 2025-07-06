@@ -9,6 +9,7 @@ services:
       - NOTION_API_KEY=${NOTION_API_KEY}
       - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
       - WEBHOOK_API_KEY=${WEBHOOK_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - ENVIRONMENT=production
       
       # Google Calendar Configuration

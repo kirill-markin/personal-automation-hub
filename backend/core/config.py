@@ -9,6 +9,7 @@ import os
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
+from .llm_models import DEFAULT_CATEGORIZATION_MODEL, DEFAULT_DRAFT_GENERATION_MODEL
 
 
 class NotionConfig(BaseModel):
@@ -31,6 +32,20 @@ class GoogleCalendarConfig(BaseModel):
     # Account discovery settings
     max_accounts: int = Field(default=10, description="Maximum number of accounts to scan for")
     max_sync_flows: int = Field(default=50, description="Maximum number of sync flows to scan for")
+
+
+class OpenRouterConfig(BaseModel):
+    """OpenRouter LLM integration configuration."""
+    api_key: str = Field(..., description="OpenRouter API key")
+    categorization_model: str = Field(default=DEFAULT_CATEGORIZATION_MODEL, description="Model for email categorization")
+    draft_generation_model: str = Field(default=DEFAULT_DRAFT_GENERATION_MODEL, description="Model for draft generation")
+
+
+class GoogleCloudConfig(BaseModel):
+    """Google Cloud integration configuration."""
+    project_id: str = Field(..., description="Google Cloud project ID")
+    pubsub_topic: str = Field(default="gmail-notifications", description="Pub/Sub topic for Gmail notifications")
+    pubsub_subscription: str = Field(default="gmail-notifications-sub", description="Pub/Sub subscription name")
 
 
 class SecurityConfig(BaseModel):
@@ -67,6 +82,16 @@ class Settings(BaseSettings):
     max_google_accounts: int = Field(default=10, description="Maximum accounts to scan")
     max_sync_flows: int = Field(default=50, description="Maximum sync flows to scan")
     
+    # OpenRouter LLM settings
+    openrouter_api_key: Optional[str] = Field(None, description="OpenRouter API key")
+    openrouter_categorization_model: str = Field(default=DEFAULT_CATEGORIZATION_MODEL, description="Model for email categorization")
+    openrouter_draft_generation_model: str = Field(default=DEFAULT_DRAFT_GENERATION_MODEL, description="Model for draft generation")
+    
+    # Google Cloud settings
+    google_cloud_project_id: Optional[str] = Field(None, description="Google Cloud project ID")
+    google_cloud_pubsub_topic: str = Field(default="gmail-notifications", description="Pub/Sub topic for Gmail notifications")
+    google_cloud_pubsub_subscription: str = Field(default="gmail-notifications-sub", description="Pub/Sub subscription name")
+    
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
@@ -99,6 +124,28 @@ class Settings(BaseSettings):
         """Get security configuration."""
         return SecurityConfig(
             webhook_api_key=self.webhook_api_key
+        )
+    
+    @property
+    def openrouter_config(self) -> Optional[OpenRouterConfig]:
+        """Get OpenRouter configuration."""
+        if not self.openrouter_api_key:
+            return None
+        return OpenRouterConfig(
+            api_key=self.openrouter_api_key,
+            categorization_model=self.openrouter_categorization_model,
+            draft_generation_model=self.openrouter_draft_generation_model
+        )
+    
+    @property
+    def google_cloud_config(self) -> Optional[GoogleCloudConfig]:
+        """Get Google Cloud configuration."""
+        if not self.google_cloud_project_id:
+            return None
+        return GoogleCloudConfig(
+            project_id=self.google_cloud_project_id,
+            pubsub_topic=self.google_cloud_pubsub_topic,
+            pubsub_subscription=self.google_cloud_pubsub_subscription
         )
 
 
@@ -241,4 +288,6 @@ settings = Settings()  # type: ignore
 # Export commonly used configurations
 notion_config = settings.notion_config
 google_calendar_config = settings.google_calendar_config
-security_config = settings.security_config 
+security_config = settings.security_config
+openrouter_config = settings.openrouter_config
+google_cloud_config = settings.google_cloud_config 
