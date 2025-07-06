@@ -81,6 +81,15 @@ frontend/                 # Streamlit interface
 - Optimal hosting solution?
 - Monitoring and logging strategy?
 
+## Documentation
+
+- [Google Calendar Setup Guide](google_calendar_setup.md) - Complete setup instructions
+- [Configuration Examples](configuration_examples.md) - Common sync scenarios
+- [All-Day Events Support](all_day_events.md) - Handling of all-day events in calendar sync
+- [Notion Webhook Integration](notion_webhook.md) - Notion task creation API
+- [Calendar Sync Technical Details](calendar_sync.md) - Technical implementation details
+- [Troubleshooting Guide](troubleshooting.md) - Common issues and solutions
+
 ## Next Steps
 
 - Create repo

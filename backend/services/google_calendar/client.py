@@ -172,7 +172,7 @@ class GoogleCalendarClient:
         reraise=True
     )
     def create_event(self, calendar_id: str, title: str, start_time: datetime, end_time: datetime, 
-                    description: str = "", participants: Optional[List[str]] = None) -> Dict[str, Any]:
+                    description: str = "", participants: Optional[List[str]] = None, all_day: bool = False) -> Dict[str, Any]:
         """Create a new event in the specified calendar.
         
         Args:
@@ -182,6 +182,7 @@ class GoogleCalendarClient:
             end_time: Event end time
             description: Event description (optional)
             participants: List of participant email addresses (optional)
+            all_day: Whether this is an all-day event (optional)
             
         Returns:
             Created event dictionary
@@ -192,22 +193,34 @@ class GoogleCalendarClient:
             event: Dict[str, Any] = {
                 'summary': title,
                 'description': description,
-                'start': {
+            }
+            
+            # Set start and end times based on all_day flag
+            if all_day:
+                # For all-day events, use date format without time
+                event['start'] = {
+                    'date': start_time.strftime('%Y-%m-%d'),
+                }
+                event['end'] = {
+                    'date': end_time.strftime('%Y-%m-%d'),
+                }
+            else:
+                # For regular events, use dateTime format
+                event['start'] = {
                     'dateTime': start_time.isoformat(),
                     'timeZone': 'UTC',
-                },
-                'end': {
+                }
+                event['end'] = {
                     'dateTime': end_time.isoformat(),
                     'timeZone': 'UTC',
-                },
-            }
+                }
             
             # Add attendees if participants are provided
             if participants:
                 event['attendees'] = [{'email': email} for email in participants]
             
             event_result = service.events().insert(calendarId=calendar_id, body=event).execute()  # type: ignore
-            logger.info(f"Created event '{title}' in calendar {calendar_id}")
+            logger.info(f"Created {'all-day' if all_day else 'regular'} event '{title}' in calendar {calendar_id}")
             
             return self._parse_event(event_result)  # type: ignore
             
@@ -315,8 +328,12 @@ class GoogleCalendarClient:
         Returns:
             Simplified event dictionary
         """
-        # Parse start time
+        # Determine if this is an all-day event
         start = event.get('start', {})
+        end = event.get('end', {})
+        is_all_day = 'date' in start and 'date' in end
+        
+        # Parse start time
         if 'dateTime' in start:
             start_time = datetime.fromisoformat(start['dateTime'].replace('Z', '+00:00'))
         else:
@@ -324,7 +341,6 @@ class GoogleCalendarClient:
             start_time = datetime.fromisoformat(start.get('date', ''))
         
         # Parse end time
-        end = event.get('end', {})
         if 'dateTime' in end:
             end_time = datetime.fromisoformat(end['dateTime'].replace('Z', '+00:00'))
         else:
@@ -341,6 +357,7 @@ class GoogleCalendarClient:
             'description': event.get('description', ''),
             'start_time': start_time,
             'end_time': end_time,
+            'all_day': is_all_day,
             'participants': participants,
             'participant_count': len(participants),
             'status': event.get('status', 'unknown'),

@@ -258,7 +258,8 @@ For detailed Google Calendar synchronization setup:
 
 - **Event Filtering**: Only events with 2+ participants are synced
 - **Busy/Free Transparency**: Only events marked as 'busy' (opaque) are synced; 'free' (transparent) events are ignored
-- **Time Offsets**: Configurable minutes before/after event for busy blocks
+- **All-Day Events Support**: All-day events are synchronized without time offsets and preserve their all-day format
+- **Time Offsets**: Configurable minutes before/after event for busy blocks (applied only to regular timed events)
 - **Real-time Sync**: Webhooks provide immediate synchronization
 - **Backup Sync**: Daily polling catches any missed events
 - **Multi-Account**: Support for unlimited Google accounts
@@ -281,3 +282,15 @@ The system now respects the Google Calendar transparency setting:
 - **Dynamic Updates**: Real-time webhook updates handle transparency changes immediately
 
 This allows for more granular control over which events should block time in synchronized calendars.
+
+### All-Day Events Support
+
+The system intelligently handles all-day events differently from regular timed events:
+
+- **All-Day Events**: No time offsets applied, busy blocks preserve all-day format
+- **Regular Events**: Time offsets applied (e.g., -15 minutes start, +15 minutes end)
+- **Multi-Day Events**: Events with specific times across multiple days still get offsets
+
+**Example**: A vacation day (all-day) creates an all-day busy block, while a 2pm meeting creates a busy block from 1:45pm to 2:15pm.
+
+For complete details, see [All-Day Events Documentation](docs/all_day_events.md).

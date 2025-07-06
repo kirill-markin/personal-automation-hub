@@ -258,7 +258,8 @@ class CalendarSyncEngine:
             title=busy_block.title,
             start_time=busy_block.start_time,
             end_time=busy_block.end_time,
-            description=f"Busy block for: {event.title}"
+            description=f"Busy block for: {event.title}",
+            all_day=event.is_all_day()
         )
         
         logger.info(f"Created busy block '{busy_block.title}' for event '{event.title}' in flow {flow.name}")
@@ -376,6 +377,7 @@ class CalendarSyncEngine:
                         description=event_data.get('description', ''),
                         start_time=event_data['start_time'],
                         end_time=event_data['end_time'],
+                        all_day=event_data.get('all_day', False),
                         participants=event_data.get('participants', []),
                         participant_count=event_data.get('participant_count', 0),
                         status=event_data.get('status', 'unknown'),

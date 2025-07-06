@@ -94,6 +94,7 @@ class CalendarEvent(BaseModel):
     description: str = Field(default="", description="Event description")
     start_time: datetime = Field(..., description="Event start time")
     end_time: datetime = Field(..., description="Event end time")
+    all_day: bool = Field(default=False, description="Whether this is an all-day event")
     participants: List[str] = Field(default_factory=list, description="List of participant email addresses")
     participant_count: int = Field(default=0, description="Number of participants")
     status: str = Field(..., description="Event status (confirmed, cancelled, etc.)")
@@ -128,6 +129,10 @@ class CalendarEvent(BaseModel):
     def is_free(self) -> bool:
         """Check if event is marked as free (transparent transparency)."""
         return self.transparency.lower() == 'transparent'
+    
+    def is_all_day(self) -> bool:
+        """Check if event is an all-day event."""
+        return self.all_day
 
 
 class BusyBlockSearchCriteria(BaseModel):
@@ -177,10 +182,15 @@ class BusyBlock(BaseModel):
         start_time = event.start_time.replace(second=0, microsecond=0)
         end_time = event.end_time.replace(second=0, microsecond=0)
         
-        # Apply offsets (start_offset is negative, end_offset is positive)
-        from datetime import timedelta
-        busy_start = start_time + timedelta(minutes=flow.start_offset)
-        busy_end = end_time + timedelta(minutes=flow.end_offset)
+        # For all-day events, don't apply offsets - keep original timing
+        if event.is_all_day():
+            busy_start = start_time
+            busy_end = end_time
+        else:
+            # Apply offsets only for regular events (start_offset is negative, end_offset is positive)
+            from datetime import timedelta
+            busy_start = start_time + timedelta(minutes=flow.start_offset)
+            busy_end = end_time + timedelta(minutes=flow.end_offset)
         
         return cls(
             source_event=event,
