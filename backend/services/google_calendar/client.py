@@ -1,0 +1,299 @@
+"""
+Google Calendar API client with OAuth2 refresh token authentication.
+
+This client handles:
+- OAuth2 refresh token authentication
+- Calendar API operations (list, create, delete events)
+- Rate limiting and error handling
+- Automatic token refresh
+"""
+
+import logging
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timedelta
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build  # type: ignore
+from googleapiclient.errors import HttpError  # type: ignore
+
+logger = logging.getLogger(__name__)
+
+class GoogleCalendarError(Exception):
+    """Base exception for Google Calendar API errors."""
+    pass
+
+class GoogleCalendarClient:
+    """Google Calendar API client with OAuth2 refresh token authentication."""
+    
+    def __init__(self, client_id: str, client_secret: str, refresh_token: str) -> None:
+        """Initialize Google Calendar client.
+        
+        Args:
+            client_id: Google OAuth2 client ID
+            client_secret: Google OAuth2 client secret
+            refresh_token: OAuth2 refresh token for authentication
+        """
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.refresh_token = refresh_token
+        self._service = None  # type: ignore
+        self._credentials: Optional[Credentials] = None
+        
+    def _get_credentials(self) -> Credentials:
+        """Get or refresh OAuth2 credentials."""
+        if self._credentials is None:
+            self._credentials = Credentials(
+                token=None,
+                refresh_token=self.refresh_token,
+                token_uri='https://oauth2.googleapis.com/token',
+                client_id=self.client_id,
+                client_secret=self.client_secret
+            )
+        
+        # Refresh token if needed
+        if not self._credentials.valid:
+            try:
+                self._credentials.refresh(Request())  # type: ignore
+                logger.info("OAuth2 token refreshed successfully")
+            except Exception as e:
+                logger.error(f"Failed to refresh OAuth2 token: {e}")
+                raise GoogleCalendarError(f"Authentication failed: {e}")
+        
+        return self._credentials
+    
+    def _get_service(self):  # type: ignore
+        """Get or create Google Calendar service."""
+        if self._service is None:  # type: ignore
+            credentials = self._get_credentials()
+            self._service = build('calendar', 'v3', credentials=credentials)  # type: ignore
+        return self._service  # type: ignore
+    
+    def list_calendars(self) -> List[Dict[str, Any]]:
+        """List all accessible calendars.
+        
+        Returns:
+            List of calendar dictionaries with id, summary, and access role
+        """
+        try:
+            service = self._get_service()  # type: ignore
+            calendars_result = service.calendarList().list().execute()  # type: ignore
+            calendars = calendars_result.get('items', [])  # type: ignore
+            
+            # Return simplified calendar info
+            return [
+                {
+                    'id': cal['id'],
+                    'summary': cal.get('summary', 'Unknown'),  # type: ignore
+                    'access_role': cal.get('accessRole', 'unknown'),  # type: ignore
+                    'primary': cal.get('primary', False)  # type: ignore
+                }
+                for cal in calendars  # type: ignore
+            ]
+            
+        except HttpError as e:
+            logger.error(f"HTTP error listing calendars: {e}")
+            raise GoogleCalendarError(f"Failed to list calendars: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error listing calendars: {e}")
+            raise GoogleCalendarError(f"Unexpected error: {e}")
+    
+    def get_events(self, calendar_id: str, start_time: datetime, end_time: datetime) -> List[Dict[str, Any]]:
+        """Get events from a calendar within a time range.
+        
+        Args:
+            calendar_id: Calendar ID to query
+            start_time: Start of time range (inclusive)
+            end_time: End of time range (exclusive)
+            
+        Returns:
+            List of event dictionaries
+        """
+        try:
+            service = self._get_service()  # type: ignore
+            
+            # Format times for API
+            time_min = start_time.isoformat() + 'Z'
+            time_max = end_time.isoformat() + 'Z'
+            
+            events_result = service.events().list(  # type: ignore
+                calendarId=calendar_id,
+                timeMin=time_min,
+                timeMax=time_max,
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()  # type: ignore
+            
+            events = events_result.get('items', [])  # type: ignore
+            
+            # Parse events into simplified format
+            parsed_events = []
+            for event in events:  # type: ignore
+                parsed_events.append(self._parse_event(event))  # type: ignore
+            
+            return parsed_events  # type: ignore
+            
+        except HttpError as e:
+            logger.error(f"HTTP error getting events for calendar {calendar_id}: {e}")
+            raise GoogleCalendarError(f"Failed to get events: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error getting events for calendar {calendar_id}: {e}")
+            raise GoogleCalendarError(f"Unexpected error: {e}")
+    
+    def create_event(self, calendar_id: str, title: str, start_time: datetime, end_time: datetime, 
+                    description: str = "") -> Dict[str, Any]:
+        """Create a new event in the specified calendar.
+        
+        Args:
+            calendar_id: Calendar ID where to create the event
+            title: Event title
+            start_time: Event start time
+            end_time: Event end time
+            description: Event description (optional)
+            
+        Returns:
+            Created event dictionary
+        """
+        try:
+            service = self._get_service()  # type: ignore
+            
+            event = {
+                'summary': title,
+                'description': description,
+                'start': {
+                    'dateTime': start_time.isoformat(),
+                    'timeZone': 'UTC',
+                },
+                'end': {
+                    'dateTime': end_time.isoformat(),
+                    'timeZone': 'UTC',
+                },
+            }
+            
+            event_result = service.events().insert(calendarId=calendar_id, body=event).execute()  # type: ignore
+            logger.info(f"Created event '{title}' in calendar {calendar_id}")
+            
+            return self._parse_event(event_result)  # type: ignore
+            
+        except HttpError as e:
+            logger.error(f"HTTP error creating event in calendar {calendar_id}: {e}")
+            raise GoogleCalendarError(f"Failed to create event: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error creating event in calendar {calendar_id}: {e}")
+            raise GoogleCalendarError(f"Unexpected error: {e}")
+    
+    def delete_event(self, calendar_id: str, event_id: str) -> bool:
+        """Delete an event from the specified calendar.
+        
+        Args:
+            calendar_id: Calendar ID containing the event
+            event_id: Event ID to delete
+            
+        Returns:
+            True if deleted successfully, False if event not found
+        """
+        try:
+            service = self._get_service()  # type: ignore
+            service.events().delete(calendarId=calendar_id, eventId=event_id).execute()  # type: ignore
+            logger.info(f"Deleted event {event_id} from calendar {calendar_id}")
+            return True
+            
+        except HttpError as e:
+            if e.resp.status == 404:  # type: ignore
+                logger.warning(f"Event {event_id} not found in calendar {calendar_id}")
+                return False
+            else:
+                logger.error(f"HTTP error deleting event {event_id}: {e}")
+                raise GoogleCalendarError(f"Failed to delete event: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error deleting event {event_id}: {e}")
+            raise GoogleCalendarError(f"Unexpected error: {e}")
+    
+    def find_events_by_time_and_title(self, calendar_id: str, start_time: datetime, 
+                                     end_time: datetime, title: str) -> List[Dict[str, Any]]:
+        """Find events matching exact start time, end time, and title.
+        
+        Args:
+            calendar_id: Calendar ID to search
+            start_time: Exact start time to match
+            end_time: Exact end time to match
+            title: Exact title to match
+            
+        Returns:
+            List of matching events
+        """
+        try:
+            # Get events in a wider time range to ensure we capture the event
+            search_start = start_time - timedelta(hours=1)
+            search_end = end_time + timedelta(hours=1)
+            
+            events = self.get_events(calendar_id, search_start, search_end)
+            
+            # Filter by exact match
+            matching_events = []
+            for event in events:
+                if (event['title'] == title and 
+                    event['start_time'] == start_time and 
+                    event['end_time'] == end_time):
+                    matching_events.append(event)  # type: ignore
+            
+            return matching_events  # type: ignore
+            
+        except Exception as e:
+            logger.error(f"Error finding events by time and title: {e}")
+            raise GoogleCalendarError(f"Failed to find events: {e}")
+    
+    def _parse_event(self, event: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+        """Parse Google Calendar API event into simplified format.
+        
+        Args:
+            event: Raw event from Google Calendar API
+            
+        Returns:
+            Simplified event dictionary
+        """
+        # Parse start time
+        start = event.get('start', {})
+        if 'dateTime' in start:
+            start_time = datetime.fromisoformat(start['dateTime'].replace('Z', '+00:00'))
+        else:
+            # All-day event
+            start_time = datetime.fromisoformat(start.get('date', ''))
+        
+        # Parse end time
+        end = event.get('end', {})
+        if 'dateTime' in end:
+            end_time = datetime.fromisoformat(end['dateTime'].replace('Z', '+00:00'))
+        else:
+            # All-day event
+            end_time = datetime.fromisoformat(end.get('date', ''))
+        
+        # Parse attendees
+        attendees = event.get('attendees', [])
+        participants = [attendee.get('email', '') for attendee in attendees]
+        
+        return {
+            'id': event.get('id', ''),
+            'title': event.get('summary', ''),
+            'description': event.get('description', ''),
+            'start_time': start_time,
+            'end_time': end_time,
+            'participants': participants,
+            'participant_count': len(participants),
+            'status': event.get('status', 'unknown'),
+            'creator': event.get('creator', {}).get('email', ''),
+            'organizer': event.get('organizer', {}).get('email', '')
+        }
+    
+    def test_connection(self) -> bool:
+        """Test if the client can connect to Google Calendar API.
+        
+        Returns:
+            True if connection successful, False otherwise
+        """
+        try:
+            calendars = self.list_calendars()
+            logger.info(f"Connection test successful. Found {len(calendars)} calendars.")
+            return True
+        except Exception as e:
+            logger.error(f"Connection test failed: {e}")
+            return False 
