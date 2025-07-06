@@ -35,10 +35,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Google Calendar API scopes
+# Google Calendar and Gmail API scopes
 SCOPES = [
+    # To calendar sync
     'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/calendar.events'
+    'https://www.googleapis.com/auth/calendar.events',
+
+    # To gmail automation
+    'https://www.googleapis.com/auth/gmail.modify'
 ]
 
 
