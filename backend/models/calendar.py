@@ -350,6 +350,98 @@ class WebhookSubscription(BaseModel):
     error: Optional[str] = Field(None, description="Error message if subscription failed")
 
 
+class GoogleCalendarWebhookData(BaseModel):
+    """Google Calendar webhook notification data structure."""
+    
+    channel_id: str = Field(..., description="Channel ID from subscription")
+    channel_token: Optional[str] = Field(None, description="Channel token for verification")
+    channel_expiration: Optional[str] = Field(None, description="Channel expiration time")
+    resource_id: str = Field(..., description="Resource ID (calendar ID)")
+    resource_uri: str = Field(..., description="Resource URI")
+    resource_state: str = Field(..., description="Resource state (sync, exists, not_exists)")
+    message_number: Optional[str] = Field(None, description="Message sequence number")
+    
+    @model_validator(mode='after')
+    def validate_resource_state(self) -> 'GoogleCalendarWebhookData':
+        valid_states = ['sync', 'exists', 'not_exists']
+        if self.resource_state not in valid_states:
+            raise ValueError(f'resource_state must be one of: {valid_states}')
+        return self
+
+
+class WebhookHeaders(BaseModel):
+    """HTTP headers from Google Calendar webhook request."""
+    
+    x_goog_channel_id: str = Field(..., description="Google channel ID header")
+    x_goog_channel_token: Optional[str] = Field(None, description="Google channel token header")
+    x_goog_channel_expiration: Optional[str] = Field(None, description="Google channel expiration header")
+    x_goog_resource_id: str = Field(..., description="Google resource ID header")
+    x_goog_resource_uri: str = Field(..., description="Google resource URI header")
+    x_goog_resource_state: str = Field(..., description="Google resource state header")
+    x_goog_message_number: Optional[str] = Field(None, description="Google message number header")
+    
+    @classmethod
+    def from_request_headers(cls, headers: Dict[str, str]) -> 'WebhookHeaders':
+        """Create WebhookHeaders from HTTP request headers.
+        
+        Args:
+            headers: HTTP request headers dictionary
+            
+        Returns:
+            WebhookHeaders instance
+        """
+        # Convert header names to lowercase for consistent lookup
+        headers_lower = {k.lower(): v for k, v in headers.items()}
+        
+        return cls(
+            x_goog_channel_id=headers_lower.get('x-goog-channel-id', ''),
+            x_goog_channel_token=headers_lower.get('x-goog-channel-token'),
+            x_goog_channel_expiration=headers_lower.get('x-goog-channel-expiration'),
+            x_goog_resource_id=headers_lower.get('x-goog-resource-id', ''),
+            x_goog_resource_uri=headers_lower.get('x-goog-resource-uri', ''),
+            x_goog_resource_state=headers_lower.get('x-goog-resource-state', ''),
+            x_goog_message_number=headers_lower.get('x-goog-message-number')
+        )
+
+
+class WebhookValidationResult(BaseModel):
+    """Result of webhook validation."""
+    
+    is_valid: bool = Field(..., description="Whether webhook is valid")
+    reason: Optional[str] = Field(None, description="Reason for validation failure")
+    channel_id: Optional[str] = Field(None, description="Validated channel ID")
+    resource_id: Optional[str] = Field(None, description="Validated resource ID")
+    resource_state: Optional[str] = Field(None, description="Validated resource state")
+
+
+class PushNotificationChannel(BaseModel):
+    """Google Calendar push notification channel configuration."""
+    
+    id: str = Field(..., description="Unique channel identifier")
+    type: str = Field(default="web_hook", description="Channel type")
+    address: str = Field(..., description="Webhook URL to receive notifications")
+    token: Optional[str] = Field(None, description="Verification token")
+    expiration: Optional[int] = Field(None, description="Expiration time as Unix timestamp")
+    params: Optional[Dict[str, str]] = Field(None, description="Additional parameters")
+    
+    @model_validator(mode='after')
+    def validate_type(self) -> 'PushNotificationChannel':
+        if self.type != "web_hook":
+            raise ValueError('type must be "web_hook" for Google Calendar webhooks')
+        return self
+
+
+class ChannelSubscriptionResult(BaseModel):
+    """Result of creating a Google Calendar push notification channel."""
+    
+    success: bool = Field(..., description="Whether subscription was successful")
+    channel_id: str = Field(..., description="Channel ID")
+    calendar_id: str = Field(..., description="Calendar ID that was subscribed to")
+    resource_id: Optional[str] = Field(None, description="Resource ID from Google response")
+    expiration: Optional[str] = Field(None, description="Channel expiration time")
+    error: Optional[str] = Field(None, description="Error message if subscription failed")
+
+
 class SystemHealthStatus(BaseModel):
     """System health status information."""
     

@@ -296,4 +296,89 @@ class GoogleCalendarClient:
             return True
         except Exception as e:
             logger.error(f"Connection test failed: {e}")
-            return False 
+            return False
+    
+    def create_push_notification_channel(self, calendar_id: str, webhook_url: str, 
+                                       channel_id: str, channel_token: Optional[str] = None) -> Dict[str, Any]:
+        """Create a push notification channel for calendar events.
+        
+        Args:
+            calendar_id: Calendar ID to watch for changes
+            webhook_url: URL to receive webhook notifications
+            channel_id: Unique channel identifier
+            channel_token: Optional verification token
+            
+        Returns:
+            Channel information from Google Calendar API
+        """
+        try:
+            service = self._get_service()  # type: ignore
+            
+            # Prepare channel configuration
+            channel_body = {
+                'id': channel_id,
+                'type': 'web_hook',
+                'address': webhook_url
+            }
+            
+            if channel_token:
+                channel_body['token'] = channel_token
+            
+            # Create the watch request
+            result = service.events().watch(  # type: ignore
+                calendarId=calendar_id,
+                body=channel_body
+            ).execute()  # type: ignore
+            
+            logger.info(f"Created push notification channel {channel_id} for calendar {calendar_id}")
+            
+            return {
+                'channel_id': result.get('id', ''),  # type: ignore
+                'resource_id': result.get('resourceId', ''),  # type: ignore
+                'resource_uri': result.get('resourceUri', ''),  # type: ignore
+                'expiration': result.get('expiration'),  # type: ignore
+                'kind': result.get('kind', ''),  # type: ignore
+                'calendar_id': calendar_id
+            }
+            
+        except HttpError as e:
+            logger.error(f"HTTP error creating push notification channel for calendar {calendar_id}: {e}")
+            raise GoogleCalendarError(f"Failed to create webhook subscription: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error creating push notification channel for calendar {calendar_id}: {e}")
+            raise GoogleCalendarError(f"Unexpected error: {e}")
+    
+    def stop_push_notification_channel(self, channel_id: str, resource_id: str) -> bool:
+        """Stop a push notification channel.
+        
+        Args:
+            channel_id: Channel ID to stop
+            resource_id: Resource ID for the channel
+            
+        Returns:
+            True if stopped successfully, False if channel not found
+        """
+        try:
+            service = self._get_service()  # type: ignore
+            
+            # Stop the channel
+            service.channels().stop(  # type: ignore
+                body={
+                    'id': channel_id,
+                    'resourceId': resource_id
+                }
+            ).execute()  # type: ignore
+            
+            logger.info(f"Stopped push notification channel {channel_id}")
+            return True
+            
+        except HttpError as e:
+            if e.resp.status == 404:  # type: ignore
+                logger.warning(f"Channel {channel_id} not found or already expired")
+                return False
+            else:
+                logger.error(f"HTTP error stopping push notification channel {channel_id}: {e}")
+                raise GoogleCalendarError(f"Failed to stop webhook subscription: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error stopping push notification channel {channel_id}: {e}")
+            raise GoogleCalendarError(f"Unexpected error: {e}") 

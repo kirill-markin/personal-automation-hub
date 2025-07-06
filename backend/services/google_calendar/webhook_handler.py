@@ -6,6 +6,7 @@ validates them, and processes calendar events through the sync engine.
 """
 
 import logging
+import uuid
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 
@@ -14,10 +15,13 @@ from backend.models.calendar import (
     WebhookProcessingResult,
     MonitoredCalendar,
     CalendarSyncResult,
-    WebhookSubscription
+    WebhookHeaders,
+    WebhookValidationResult,
+    ChannelSubscriptionResult
 )
 from backend.services.google_calendar.sync_engine import CalendarSyncEngine
 from backend.services.google_calendar.account_manager import AccountManager
+from backend.services.google_calendar.client import GoogleCalendarError
 
 logger = logging.getLogger(__name__)
 
@@ -216,32 +220,114 @@ class GoogleCalendarWebhookHandler:
         
         return monitored
     
-    def validate_webhook_signature(self, webhook_data: Dict[str, Any], signature: str) -> bool:
-        """Validate webhook signature from Google Calendar.
+    def validate_webhook_signature(self, headers: Dict[str, str], webhook_data: Optional[Dict[str, Any]] = None) -> WebhookValidationResult:
+        """Validate webhook headers and data from Google Calendar.
         
         Args:
-            webhook_data: Webhook payload
-            signature: Signature from Google Calendar
+            headers: HTTP request headers from webhook
+            webhook_data: Optional webhook payload data
             
         Returns:
-            True if signature is valid, False otherwise
+            WebhookValidationResult with validation status and details
             
         Note:
-            This is a placeholder for Google Calendar webhook signature validation.
-            In production, you should implement proper signature validation.
+            Google Calendar webhooks use header-based validation rather than HMAC signatures.
+            We validate the required headers and check if the channel/resource IDs match our subscriptions.
         """
-        # TODO: Implement proper Google Calendar webhook signature validation
-        # For now, we'll just log the attempt
-        logger.debug(f"Webhook signature validation requested (not implemented): {signature}")
-        return True
+        try:
+            # Parse headers into typed structure
+            webhook_headers = WebhookHeaders.from_request_headers(headers)
+            
+            # Validate required headers are present
+            if not webhook_headers.x_goog_channel_id:
+                return WebhookValidationResult(
+                    is_valid=False,
+                    reason="Missing X-Goog-Channel-Id header",
+                    channel_id=None,
+                    resource_id=None,
+                    resource_state=None
+                )
+            
+            if not webhook_headers.x_goog_resource_id:
+                return WebhookValidationResult(
+                    is_valid=False,
+                    reason="Missing X-Goog-Resource-Id header",
+                    channel_id=None,
+                    resource_id=None,
+                    resource_state=None
+                )
+            
+            if not webhook_headers.x_goog_resource_state:
+                return WebhookValidationResult(
+                    is_valid=False,
+                    reason="Missing X-Goog-Resource-State header",
+                    channel_id=None,
+                    resource_id=None,
+                    resource_state=None
+                )
+            
+            # Validate resource state is valid
+            valid_states = ['sync', 'exists', 'not_exists']
+            if webhook_headers.x_goog_resource_state not in valid_states:
+                return WebhookValidationResult(
+                    is_valid=False,
+                    reason=f"Invalid resource state: {webhook_headers.x_goog_resource_state}",
+                    channel_id=None,
+                    resource_id=None,
+                    resource_state=None
+                )
+            
+            # Check if we have a subscription for this channel/resource
+            calendar_id = webhook_headers.x_goog_resource_id
+            if not self._is_monitored_calendar(calendar_id):
+                return WebhookValidationResult(
+                    is_valid=False,
+                    reason=f"Webhook for non-monitored calendar: {calendar_id}",
+                    channel_id=None,
+                    resource_id=None,
+                    resource_state=None
+                )
+            
+            logger.debug(f"Webhook validation successful for channel {webhook_headers.x_goog_channel_id}")
+            
+            return WebhookValidationResult(
+                is_valid=True,
+                reason=None,
+                channel_id=webhook_headers.x_goog_channel_id,
+                resource_id=webhook_headers.x_goog_resource_id,
+                resource_state=webhook_headers.x_goog_resource_state
+            )
+            
+        except Exception as e:
+            logger.error(f"Error validating webhook: {e}")
+            return WebhookValidationResult(
+                is_valid=False,
+                reason=f"Validation error: {str(e)}",
+                channel_id=None,
+                resource_id=None,
+                resource_state=None
+            )
     
-    def create_webhook_subscription(self, calendar_id: str, account_id: int, callback_url: str) -> WebhookSubscription:
+    def _is_monitored_calendar(self, calendar_id: str) -> bool:
+        """Check if a calendar ID is being monitored by any sync flow.
+        
+        Args:
+            calendar_id: Calendar ID to check
+            
+        Returns:
+            True if calendar is monitored, False otherwise
+        """
+        return calendar_id in self.calendar_to_account
+    
+    def create_webhook_subscription(self, calendar_id: str, account_id: int, callback_url: str, 
+                                  channel_token: Optional[str] = None) -> ChannelSubscriptionResult:
         """Create a webhook subscription for a calendar.
         
         Args:
             calendar_id: Calendar ID to subscribe to
             account_id: Account ID for the calendar
             callback_url: URL to receive webhook notifications
+            channel_token: Optional verification token for the channel
             
         Returns:
             Subscription result
@@ -250,66 +336,115 @@ class GoogleCalendarWebhookHandler:
             # Get calendar client
             client = self.account_manager.get_client(account_id)
             
-            # TODO: Implement actual Google Calendar webhook subscription
-            # This would use the Google Calendar API to create a push notification channel
-            # For now, we'll just log the attempt
-            logger.info(f"Creating webhook subscription for calendar {calendar_id} at {callback_url}")
+            # Generate unique channel ID
+            channel_id = f"cal-sync-{uuid.uuid4().hex[:16]}"
             
-            return WebhookSubscription(
-                success=True,
+            logger.info(f"Creating webhook subscription for calendar {calendar_id} at {callback_url} with channel {channel_id}")
+            
+            # Create push notification channel using Google Calendar API
+            channel_result = client.create_push_notification_channel(
                 calendar_id=calendar_id,
-                account_id=account_id,
-                callback_url=callback_url,
-                channel_id=f"channel_{calendar_id}_{account_id}",
-                resource_id=f"resource_{calendar_id}",
+                webhook_url=callback_url,
+                channel_id=channel_id,
+                channel_token=channel_token
+            )
+            
+            logger.info(f"Successfully created webhook subscription {channel_id} for calendar {calendar_id}")
+            
+            return ChannelSubscriptionResult(
+                success=True,
+                channel_id=channel_result['channel_id'],
+                calendar_id=calendar_id,
+                resource_id=channel_result.get('resource_id'),
+                expiration=channel_result.get('expiration'),
                 error=None
             )
             
-        except Exception as e:
-            logger.error(f"Error creating webhook subscription for calendar {calendar_id}: {e}")
-            return WebhookSubscription(
+        except GoogleCalendarError as e:
+            logger.error(f"Google Calendar API error creating webhook subscription for calendar {calendar_id}: {e}")
+            return ChannelSubscriptionResult(
                 success=False,
+                channel_id="",
                 calendar_id=calendar_id,
-                account_id=account_id,
-                callback_url=callback_url,
-                channel_id=None,
                 resource_id=None,
+                expiration=None,
+                error=str(e)
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error creating webhook subscription for calendar {calendar_id}: {e}")
+            return ChannelSubscriptionResult(
+                success=False,
+                channel_id="",
+                calendar_id=calendar_id,
+                resource_id=None,
+                expiration=None,
                 error=str(e)
             )
     
-    def delete_webhook_subscription(self, channel_id: str, resource_id: str) -> WebhookSubscription:
+    def delete_webhook_subscription(self, channel_id: str, resource_id: str, account_id: Optional[int] = None) -> ChannelSubscriptionResult:
         """Delete a webhook subscription.
         
         Args:
             channel_id: Channel ID to delete
             resource_id: Resource ID for the subscription
+            account_id: Optional account ID if specific client is needed
             
         Returns:
             Deletion result
         """
         try:
-            # TODO: Implement actual Google Calendar webhook subscription deletion
-            # This would use the Google Calendar API to stop the push notification channel
             logger.info(f"Deleting webhook subscription {channel_id} for resource {resource_id}")
             
-            return WebhookSubscription(
-                success=True,
-                calendar_id="",  # Not applicable for deletion
-                account_id=0,    # Not applicable for deletion
-                callback_url="", # Not applicable for deletion
-                channel_id=channel_id,
-                resource_id=resource_id,
-                error=None
-            )
+            # If account_id is provided, use specific client, otherwise try with any available client
+            if account_id:
+                client = self.account_manager.get_client(account_id)
+            else:
+                # Use the first available client for channel deletion
+                if not self.config.accounts:
+                    raise GoogleCalendarError("No accounts configured for webhook deletion")
+                client = self.account_manager.get_client(self.config.accounts[0].account_id)
             
-        except Exception as e:
-            logger.error(f"Error deleting webhook subscription {channel_id}: {e}")
-            return WebhookSubscription(
+            # Stop the push notification channel using Google Calendar API
+            success = client.stop_push_notification_channel(channel_id, resource_id)
+            
+            if success:
+                logger.info(f"Successfully deleted webhook subscription {channel_id}")
+                return ChannelSubscriptionResult(
+                    success=True,
+                    channel_id=channel_id,
+                    calendar_id="",  # Not applicable for deletion
+                    resource_id=resource_id,
+                    expiration=None,
+                    error=None
+                )
+            else:
+                logger.warning(f"Webhook subscription {channel_id} not found or already expired")
+                return ChannelSubscriptionResult(
+                    success=True,  # Consider not found as success for idempotency
+                    channel_id=channel_id,
+                    calendar_id="",
+                    resource_id=resource_id,
+                    expiration=None,
+                    error="Channel not found or already expired"
+                )
+            
+        except GoogleCalendarError as e:
+            logger.error(f"Google Calendar API error deleting webhook subscription {channel_id}: {e}")
+            return ChannelSubscriptionResult(
                 success=False,
-                calendar_id="",  # Not applicable for deletion
-                account_id=0,    # Not applicable for deletion
-                callback_url="", # Not applicable for deletion
                 channel_id=channel_id,
+                calendar_id="",
                 resource_id=resource_id,
+                expiration=None,
+                error=str(e)
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error deleting webhook subscription {channel_id}: {e}")
+            return ChannelSubscriptionResult(
+                success=False,
+                channel_id=channel_id,
+                calendar_id="",
+                resource_id=resource_id,
+                expiration=None,
                 error=str(e)
             ) 
