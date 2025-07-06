@@ -67,11 +67,18 @@ python -m pytest tests/integration/test_sync_engine.py -v
 # Test webhook handler functionality
 python -m pytest tests/integration/test_webhook_handler.py -v
 
+# Test daily polling system functionality
+python -m pytest tests/integration/test_daily_polling.py -v
+
 # Test specific sync engine features
 python tests/integration/test_sync_engine.py --test-busy-blocks
 
 # Test specific webhook handler features
 python tests/integration/test_webhook_handler.py --test-subscriptions
+
+# Test specific daily polling features
+python tests/integration/test_daily_polling.py --test-manual-sync
+python tests/integration/test_daily_polling.py --test-scheduler
 ```
 
 ### Excluding from Automated Tests
@@ -86,7 +93,7 @@ pytest -m "not integration"
 pytest -m "integration"
 
 # Run all Phase 2 integration tests
-pytest -m "integration" tests/integration/test_sync_engine.py tests/integration/test_webhook_handler.py
+pytest -m "integration" tests/integration/test_sync_engine.py tests/integration/test_webhook_handler.py tests/integration/test_daily_polling.py
 ```
 
 ## Security Notes
@@ -106,6 +113,7 @@ pytest -m "integration" tests/integration/test_sync_engine.py tests/integration/
 ### Phase 2 Tests (Core Sync Functionality)
 - `test_sync_engine.py` - End-to-end sync engine testing with real calendar data
 - `test_webhook_handler.py` - Webhook processing and subscription management testing
+- `test_daily_polling.py` - Daily polling system and API endpoint testing
 
 ## Phase 2 Integration Test Coverage
 
@@ -156,6 +164,28 @@ pytest -m "integration" tests/integration/test_sync_engine.py tests/integration/
 - `WebhookTestHelper` - Test utilities for creating mock webhook data and headers
 - Automatic cleanup of test webhook subscriptions
 
+### Daily Polling Tests (`test_daily_polling.py`)
+
+**API Endpoint Tests:**
+- `test_health_check_endpoint()` - Test health check endpoint functionality
+- `test_sync_status_endpoint()` - Test sync status monitoring endpoint
+- `test_accounts_endpoint()` - Test accounts listing endpoint
+- `test_sync_flows_endpoint()` - Test sync flows configuration endpoint
+- `test_calendar_listing_endpoint()` - Test calendar listing for each account
+
+**Manual Sync Tests:**
+- `test_manual_sync_operations()` - Test manual sync with different parameters (days_back/days_forward)
+
+**Scheduler Tests:**
+- `test_force_scheduler_run()` - Test force run scheduler functionality
+
+**Workflow Tests:**
+- `test_complete_polling_workflow()` - Test complete end-to-end polling workflow
+
+**Helper Functions:**
+- `DailyPollingTestHelper` - Test utilities for making API requests and waiting for server
+- Server availability checking and API request management
+
 ## Running Complete Integration Test Suite
 
 ```bash
@@ -165,12 +195,14 @@ pytest -m "integration" tests/integration/ -v
 # Run specific phase tests
 pytest -m "integration" tests/integration/test_sync_engine.py -v
 pytest -m "integration" tests/integration/test_webhook_handler.py -v
+pytest -m "integration" tests/integration/test_daily_polling.py -v
 
 # Run tests with detailed output
 pytest -m "integration" tests/integration/ -v -s
 
 # Run specific test function
 pytest -m "integration" tests/integration/test_sync_engine.py::test_process_event_with_multiple_participants -v
+pytest -m "integration" tests/integration/test_daily_polling.py::test_manual_sync_operations -v
 ```
 
 ## Test Data Management
