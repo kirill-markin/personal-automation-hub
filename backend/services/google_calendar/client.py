@@ -10,7 +10,7 @@ This client handles:
 
 import logging
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build  # type: ignore
@@ -111,9 +111,22 @@ class GoogleCalendarClient:
         try:
             service = self._get_service()  # type: ignore
             
-            # Format times for API
-            time_min = start_time.isoformat() + 'Z'
-            time_max = end_time.isoformat() + 'Z'
+            # Format times for API - convert to UTC and use proper ISO format
+            if start_time.tzinfo is not None:
+                # Convert timezone-aware datetime to UTC
+                start_utc = start_time.astimezone(timezone.utc).replace(tzinfo=None)
+                time_min = start_utc.isoformat() + 'Z'
+            else:
+                # Assume naive datetime is already UTC
+                time_min = start_time.isoformat() + 'Z'
+                
+            if end_time.tzinfo is not None:
+                # Convert timezone-aware datetime to UTC
+                end_utc = end_time.astimezone(timezone.utc).replace(tzinfo=None)
+                time_max = end_utc.isoformat() + 'Z'
+            else:
+                # Assume naive datetime is already UTC
+                time_max = end_time.isoformat() + 'Z'
             
             events_result = service.events().list(  # type: ignore
                 calendarId=calendar_id,
@@ -140,7 +153,7 @@ class GoogleCalendarClient:
             raise GoogleCalendarError(f"Unexpected error: {e}")
     
     def create_event(self, calendar_id: str, title: str, start_time: datetime, end_time: datetime, 
-                    description: str = "") -> Dict[str, Any]:
+                    description: str = "", participants: Optional[List[str]] = None) -> Dict[str, Any]:
         """Create a new event in the specified calendar.
         
         Args:
@@ -149,6 +162,7 @@ class GoogleCalendarClient:
             start_time: Event start time
             end_time: Event end time
             description: Event description (optional)
+            participants: List of participant email addresses (optional)
             
         Returns:
             Created event dictionary
@@ -156,7 +170,7 @@ class GoogleCalendarClient:
         try:
             service = self._get_service()  # type: ignore
             
-            event = {
+            event: Dict[str, Any] = {
                 'summary': title,
                 'description': description,
                 'start': {
@@ -168,6 +182,10 @@ class GoogleCalendarClient:
                     'timeZone': 'UTC',
                 },
             }
+            
+            # Add attendees if participants are provided
+            if participants:
+                event['attendees'] = [{'email': email} for email in participants]
             
             event_result = service.events().insert(calendarId=calendar_id, body=event).execute()  # type: ignore
             logger.info(f"Created event '{title}' in calendar {calendar_id}")

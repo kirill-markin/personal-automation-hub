@@ -127,20 +127,21 @@ class CalendarSyncEngine:
             Processing result
         """
         try:
-            # Check if event meets criteria (2+ participants, confirmed)
-            if not self._event_meets_criteria(event):
-                return EventProcessingResult(
-                    flow_name=flow.name,
-                    event_id=event.id,
-                    event_title=event.title,
-                    sync_type=sync_type,
-                    success=True,
-                    action='skipped',
-                    error=None,
-                    reason=f"Event doesn't meet criteria (participants: {event.participant_count}, status: {event.status})"
-                )
-            
+            # Handle cancelled events first (always process for deletion regardless of criteria)
             if event.is_cancelled():
+                # For cancelled events, only check if they had multiple participants originally
+                if not event.has_multiple_participants():
+                    return EventProcessingResult(
+                        flow_name=flow.name,
+                        event_id=event.id,
+                        event_title=event.title,
+                        sync_type=sync_type,
+                        success=True,
+                        action='skipped',
+                        error=None,
+                        reason=f"Cancelled event doesn't meet criteria (participants: {event.participant_count})"
+                    )
+                
                 # Handle cancelled event - remove busy block
                 deleted = self._delete_busy_block_for_event(event, flow)
                 action = 'deleted' if deleted else 'delete_attempted'
@@ -157,24 +158,36 @@ class CalendarSyncEngine:
                     error=None,
                     reason=None
                 )
-                
-            else:
-                # Handle active event - create busy block
-                created = self._create_busy_block_for_event(event, flow)
-                action = 'created' if created else 'existed'
-                if created:
-                    self.stats['busy_blocks_created'] += 1
-                
+            
+            # For active events, check if they meet criteria (2+ participants, confirmed)
+            if not self._event_meets_criteria(event):
                 return EventProcessingResult(
                     flow_name=flow.name,
                     event_id=event.id,
                     event_title=event.title,
                     sync_type=sync_type,
                     success=True,
-                    action=action,
+                    action='skipped',
                     error=None,
-                    reason=None
+                    reason=f"Event doesn't meet criteria (participants: {event.participant_count}, status: {event.status})"
                 )
+            
+            # Handle active event - create busy block
+            created = self._create_busy_block_for_event(event, flow)
+            action = 'created' if created else 'existed'
+            if created:
+                self.stats['busy_blocks_created'] += 1
+            
+            return EventProcessingResult(
+                flow_name=flow.name,
+                event_id=event.id,
+                event_title=event.title,
+                sync_type=sync_type,
+                success=True,
+                action=action,
+                error=None,
+                reason=None
+            )
             
         except Exception as e:
             logger.error(f"Error processing event {event.id} for flow {flow.name}: {e}")
