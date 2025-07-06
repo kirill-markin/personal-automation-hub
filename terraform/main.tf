@@ -155,9 +155,61 @@ resource "aws_instance" "app_server" {
 
     # Create environment file with proper values and ONLY environment variables
     cat > /opt/app/.env << EOF_ENV
+# =============================================================================
+# OTHER CONFIGURATION
+# =============================================================================
+WEBHOOK_API_KEY=${var.webhook_api_key}
+
+# =============================================================================
+# NOTION CONFIGURATION
+# =============================================================================
 NOTION_API_KEY=${var.notion_api_key}
 NOTION_DATABASE_ID=${var.notion_database_id}
-WEBHOOK_API_KEY=${var.webhook_api_key}
+
+# =============================================================================
+# GOOGLE CALENDAR CONFIGURATION
+# =============================================================================
+# Shared OAuth2 Configuration
+GOOGLE_CLIENT_ID=${var.google_client_id != null ? var.google_client_id : ""}
+GOOGLE_CLIENT_SECRET=${var.google_client_secret != null ? var.google_client_secret : ""}
+
+# Calendar Sync Settings
+DAILY_SYNC_HOUR=${var.daily_sync_hour}
+DAILY_SYNC_TIMEZONE=${var.daily_sync_timezone}
+MAX_GOOGLE_ACCOUNTS=${var.max_google_accounts}
+MAX_SYNC_FLOWS=${var.max_sync_flows}
+
+# Google Account 1 Configuration
+GOOGLE_ACCOUNT_1_NAME=${var.google_account_1_name != null ? var.google_account_1_name : ""}
+GOOGLE_ACCOUNT_1_CLIENT_ID=${var.google_account_1_client_id != null ? var.google_account_1_client_id : ""}
+GOOGLE_ACCOUNT_1_CLIENT_SECRET=${var.google_account_1_client_secret != null ? var.google_account_1_client_secret : ""}
+GOOGLE_ACCOUNT_1_REFRESH_TOKEN=${var.google_account_1_refresh_token != null ? var.google_account_1_refresh_token : ""}
+
+# Google Account 2 Configuration
+GOOGLE_ACCOUNT_2_NAME=${var.google_account_2_name != null ? var.google_account_2_name : ""}
+GOOGLE_ACCOUNT_2_CLIENT_ID=${var.google_account_2_client_id != null ? var.google_account_2_client_id : ""}
+GOOGLE_ACCOUNT_2_CLIENT_SECRET=${var.google_account_2_client_secret != null ? var.google_account_2_client_secret : ""}
+GOOGLE_ACCOUNT_2_REFRESH_TOKEN=${var.google_account_2_refresh_token != null ? var.google_account_2_refresh_token : ""}
+
+# Sync Flow 1 Configuration
+SYNC_FLOW_1_NAME=${var.sync_flow_1_name != null ? var.sync_flow_1_name : ""}
+SYNC_FLOW_1_SOURCE_ACCOUNT_ID=${var.sync_flow_1_source_account_id != null ? var.sync_flow_1_source_account_id : ""}
+SYNC_FLOW_1_SOURCE_CALENDAR_ID=${var.sync_flow_1_source_calendar_id != null ? var.sync_flow_1_source_calendar_id : ""}
+SYNC_FLOW_1_TARGET_ACCOUNT_ID=${var.sync_flow_1_target_account_id != null ? var.sync_flow_1_target_account_id : ""}
+SYNC_FLOW_1_TARGET_CALENDAR_ID=${var.sync_flow_1_target_calendar_id != null ? var.sync_flow_1_target_calendar_id : ""}
+SYNC_FLOW_1_START_OFFSET=${var.sync_flow_1_start_offset}
+SYNC_FLOW_1_END_OFFSET=${var.sync_flow_1_end_offset}
+
+# Sync Flow 2 Configuration
+SYNC_FLOW_2_NAME=${var.sync_flow_2_name != null ? var.sync_flow_2_name : ""}
+SYNC_FLOW_2_SOURCE_ACCOUNT_ID=${var.sync_flow_2_source_account_id != null ? var.sync_flow_2_source_account_id : ""}
+SYNC_FLOW_2_SOURCE_CALENDAR_ID=${var.sync_flow_2_source_calendar_id != null ? var.sync_flow_2_source_calendar_id : ""}
+SYNC_FLOW_2_TARGET_ACCOUNT_ID=${var.sync_flow_2_target_account_id != null ? var.sync_flow_2_target_account_id : ""}
+SYNC_FLOW_2_TARGET_CALENDAR_ID=${var.sync_flow_2_target_calendar_id != null ? var.sync_flow_2_target_calendar_id : ""}
+SYNC_FLOW_2_START_OFFSET=${var.sync_flow_2_start_offset}
+SYNC_FLOW_2_END_OFFSET=${var.sync_flow_2_end_offset}
+
+
 EOF_ENV
 
     # Create Nginx config based on whether domain is set
