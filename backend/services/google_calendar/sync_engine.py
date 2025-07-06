@@ -230,7 +230,7 @@ class CalendarSyncEngine:
         # Create the busy block
         target_client = self.account_manager.get_client(flow.target_account_id)
         
-        created_event = target_client.create_event(
+        target_client.create_event(
             calendar_id=flow.target_calendar_id,
             title=busy_block.title,
             start_time=busy_block.start_time,
