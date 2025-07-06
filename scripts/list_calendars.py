@@ -17,7 +17,7 @@ import sys
 import json
 import argparse
 import logging
-from typing import List, Dict, Any, TypedDict
+from typing import List, TypedDict
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -31,7 +31,6 @@ from backend.services.google_calendar.config_loader import (
     ConfigurationError
 )
 from backend.services.google_calendar.account_manager import AccountManager, AccountManagerError
-from backend.models.calendar import MultiAccountConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -96,9 +95,9 @@ def get_calendars_for_account(account_manager: AccountManager, account_id: int) 
         calendars = account_manager.list_calendars_for_account(account_id)
         
         # Process calendar data
-        processed_calendars = []
+        processed_calendars: List[CalendarInfo] = []
         for calendar in calendars:
-            calendar_info = {
+            calendar_info: CalendarInfo = {
                 "name": calendar.get('summary', 'Unknown'),
                 "id": calendar.get('id', 'Unknown'),
                 "primary": calendar.get('primary', False),
@@ -186,7 +185,7 @@ def display_calendars_formatted(results: List[AccountResult]) -> None:
     print("="*80)
 
 
-def display_calendars_json(results: List[Dict[str, Any]]) -> None:
+def display_calendars_json(results: List[AccountResult]) -> None:
     """Display calendars in JSON format.
     
     Args:
@@ -195,7 +194,7 @@ def display_calendars_json(results: List[Dict[str, Any]]) -> None:
     print(json.dumps(results, indent=2, ensure_ascii=False))
 
 
-def display_copy_paste_format(results: List[Dict[str, Any]]) -> None:
+def display_copy_paste_format(results: List[AccountResult]) -> None:
     """Display calendars in copy-paste friendly format for .env configuration.
     
     Args:
@@ -276,7 +275,7 @@ def main() -> None:
         sys.exit(1)
     
     # Get calendars
-    results = []
+    results: List[AccountResult] = []
     
     if args.account_id:
         # Get calendars for specific account

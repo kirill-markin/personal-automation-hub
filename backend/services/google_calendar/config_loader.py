@@ -40,7 +40,7 @@ def load_google_accounts_from_env() -> List[GoogleAccount]:
     Raises:
         ConfigurationError: If required environment variables are missing
     """
-    accounts = []
+    accounts: List[GoogleAccount] = []
     account_id = 1
     
     while True:
@@ -55,7 +55,7 @@ def load_google_accounts_from_env() -> List[GoogleAccount]:
             break
         
         # Validate all required keys exist
-        missing_keys = []
+        missing_keys: List[str] = []
         for key in [name_key, client_id_key, client_secret_key, refresh_token_key]:
             if key not in os.environ or not os.environ[key].strip():
                 missing_keys.append(key)
@@ -103,7 +103,7 @@ def load_sync_flows_from_env() -> List[SyncFlow]:
     Raises:
         ConfigurationError: If required environment variables are missing or invalid
     """
-    flows = []
+    flows: List[SyncFlow] = []
     flow_id = 1
     
     while True:
@@ -121,7 +121,7 @@ def load_sync_flows_from_env() -> List[SyncFlow]:
             break
         
         # Validate all required keys exist
-        missing_keys = []
+        missing_keys: List[str] = []
         for key in [name_key, source_account_key, source_calendar_key, 
                    target_account_key, target_calendar_key, start_offset_key, end_offset_key]:
             if key not in os.environ or not os.environ[key].strip():
@@ -206,7 +206,7 @@ def validate_environment_variables() -> Dict[str, str]:
     Raises:
         ConfigurationError: If critical environment variables are missing
     """
-    validation_results = {}
+    validation_results: Dict[str, str] = {}
     
     try:
         # Try to load accounts
@@ -250,7 +250,7 @@ def get_configuration_summary() -> Dict[str, Any]:
     Returns:
         Dictionary with configuration summary
     """
-    summary = {
+    summary: Dict[str, Any] = {
         "accounts": [],
         "sync_flows": [],
         "polling_settings": {},
@@ -271,7 +271,7 @@ def get_configuration_summary() -> Dict[str, Any]:
             "has_client_secret": bool(os.environ.get(f"GOOGLE_ACCOUNT_{account_id}_CLIENT_SECRET", "")),
             "has_refresh_token": bool(os.environ.get(f"GOOGLE_ACCOUNT_{account_id}_REFRESH_TOKEN", ""))
         }
-        summary["accounts"].append(account_info)
+        summary["accounts"].append(account_info)  # type: ignore
         account_id += 1
     
     # Check sync flows
@@ -291,7 +291,7 @@ def get_configuration_summary() -> Dict[str, Any]:
             "start_offset": os.environ.get(f"SYNC_FLOW_{flow_id}_START_OFFSET", ""),
             "end_offset": os.environ.get(f"SYNC_FLOW_{flow_id}_END_OFFSET", "")
         }
-        summary["sync_flows"].append(flow_info)
+        summary["sync_flows"].append(flow_info)  # type: ignore
         flow_id += 1
     
     # Check polling settings

@@ -8,7 +8,7 @@ API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 async def validate_api_key(api_key: Annotated[str, Security(API_KEY_HEADER)]) -> str:
-    if api_key != settings.WEBHOOK_API_KEY:
+    if api_key != settings.webhook_api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API Key",

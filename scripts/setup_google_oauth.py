@@ -22,7 +22,7 @@ import argparse
 import logging
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore
 from typing import Optional
 
 # Add the project root to the path so we can import our modules
@@ -102,7 +102,7 @@ def setup_oauth2_for_account(account_id: int) -> str:
     }
     
     # Create OAuth2 flow
-    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)  # type: ignore
     
     # Run the OAuth2 flow
     logger.info("Opening browser for OAuth2 authorization...")
@@ -111,16 +111,16 @@ def setup_oauth2_for_account(account_id: int) -> str:
     try:
         # Use a different port for each account to avoid conflicts
         port = 8080 + account_id
-        credentials = flow.run_local_server(port=port, open_browser=True)
+        credentials = flow.run_local_server(port=port, open_browser=True)  # type: ignore
         
-        if not credentials.refresh_token:
+        if not credentials.refresh_token:  # type: ignore
             raise Exception(
                 "No refresh token received. This might happen if you've already authorized this app. "
                 "Try revoking the app's access in your Google account settings and run this script again."
             )
         
         logger.info(f"OAuth2 setup successful for account {account_id}")
-        return credentials.refresh_token
+        return credentials.refresh_token  # type: ignore
         
     except Exception as e:
         logger.error(f"OAuth2 setup failed for account {account_id}: {e}")
@@ -279,7 +279,7 @@ def verify_refresh_token(account_id: int, refresh_token: str) -> bool:
         )
         
         # Try to refresh the token
-        credentials.refresh(Request())
+        credentials.refresh(Request())  # type: ignore
         
         return credentials.valid
         

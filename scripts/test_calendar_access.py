@@ -49,7 +49,7 @@ def test_single_account(account_manager: AccountManager, account_id: int) -> Dic
     Returns:
         Test results dictionary
     """
-    results = {
+    results = {  # type: ignore
         "account_id": account_id,
         "account_name": "Unknown",
         "connection_test": False,
@@ -85,7 +85,7 @@ def test_single_account(account_manager: AccountManager, account_id: int) -> Dic
         logger.error(f"❌ Account {account_id}: Error - {e}")
         results["error"] = str(e)
     
-    return results
+    return results  # type: ignore
 
 
 def test_all_accounts(config: MultiAccountConfig) -> List[Dict[str, Any]]:
@@ -111,9 +111,9 @@ def test_all_accounts(config: MultiAccountConfig) -> List[Dict[str, Any]]:
     # Test each account
     for account in config.accounts:
         result = test_single_account(account_manager, account.account_id)
-        results.append(result)
+        results.append(result)  # type: ignore
     
-    return results
+    return results  # type: ignore
 
 
 def display_account_results(results: List[Dict[str, Any]]) -> None:

@@ -6,8 +6,8 @@ from backend.core.config import settings
 
 class NotionService:
     def __init__(self) -> None:
-        self.client = Client(auth=settings.NOTION_API_KEY)
-        self.database_id = settings.NOTION_DATABASE_ID
+        self.client = Client(auth=settings.notion_api_key)
+        self.database_id = settings.notion_database_id
 
     def create_task(self, title: str, body: Optional[str] = None) -> str:
         """Create a task in Notion database and return the page ID."""

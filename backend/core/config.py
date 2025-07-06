@@ -14,7 +14,7 @@ from pydantic_settings import BaseSettings
 class NotionConfig(BaseModel):
     """Notion integration configuration."""
     api_key: str = Field(..., description="Notion API key")
-    personal_database_id: str = Field(..., description="Personal tasks database ID")
+    database_id: str = Field(..., description="Notion tasks database ID")
 
 
 class GoogleCalendarConfig(BaseModel):
@@ -49,35 +49,37 @@ class Settings(BaseSettings):
     api_v1_prefix: str = Field(default="/api/v1", description="API v1 prefix")
     
     # Notion configuration
-    notion_api_key: str = Field(..., env="NOTION_API_KEY", description="Notion API key")
-    notion_personal_database_id: str = Field(..., env="NOTION_PERSONAL_DATABASE_ID", description="Notion personal database ID")
+    notion_api_key: str = Field(..., description="Notion API key")
+    notion_database_id: str = Field(..., description="Notion personal database ID")
     
     # Security
-    webhook_api_key: str = Field(..., env="WEBHOOK_API_KEY", description="Webhook API key")
+    webhook_api_key: str = Field(..., description="Webhook API key")
     
     # Google Calendar shared credentials (optional)
-    google_client_id: Optional[str] = Field(None, env="GOOGLE_CLIENT_ID", description="Google OAuth2 client ID")
-    google_client_secret: Optional[str] = Field(None, env="GOOGLE_CLIENT_SECRET", description="Google OAuth2 client secret")
+    google_client_id: Optional[str] = Field(None, description="Google OAuth2 client ID")
+    google_client_secret: Optional[str] = Field(None, description="Google OAuth2 client secret")
     
     # Google Calendar polling settings
-    daily_sync_hour: int = Field(default=6, env="DAILY_SYNC_HOUR", description="Daily sync hour (0-23)")
-    daily_sync_timezone: str = Field(default="UTC", env="DAILY_SYNC_TIMEZONE", description="Daily sync timezone")
+    daily_sync_hour: int = Field(default=6, description="Daily sync hour (0-23)")
+    daily_sync_timezone: str = Field(default="UTC", description="Daily sync timezone")
     
     # Account discovery limits
-    max_google_accounts: int = Field(default=10, env="MAX_GOOGLE_ACCOUNTS", description="Maximum accounts to scan")
-    max_sync_flows: int = Field(default=50, env="MAX_SYNC_FLOWS", description="Maximum sync flows to scan")
+    max_google_accounts: int = Field(default=10, description="Maximum accounts to scan")
+    max_sync_flows: int = Field(default=50, description="Maximum sync flows to scan")
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+        "extra": "ignore",
+    }
         
     @property
     def notion_config(self) -> NotionConfig:
         """Get Notion configuration."""
         return NotionConfig(
             api_key=self.notion_api_key,
-            personal_database_id=self.notion_personal_database_id
+            database_id=self.notion_database_id
         )
     
     @property
@@ -109,7 +111,7 @@ def discover_google_accounts(max_accounts: int = 10) -> Dict[str, Any]:
     Returns:
         Dictionary with account discovery results
     """
-    accounts = {}
+    accounts: Dict[int, Dict[str, Any]] = {}
     
     for account_id in range(1, max_accounts + 1):
         account_env_vars = {
@@ -150,7 +152,7 @@ def discover_sync_flows(max_flows: int = 50) -> Dict[str, Any]:
     Returns:
         Dictionary with sync flow discovery results
     """
-    flows = {}
+    flows: Dict[int, Dict[str, Any]] = {}
     
     for flow_id in range(1, max_flows + 1):
         flow_env_vars = {
@@ -195,14 +197,14 @@ def get_environment_summary() -> Dict[str, Any]:
         Dictionary with environment configuration summary
     """
     try:
-        settings = Settings()
+        settings: Settings = Settings()  # type: ignore
         
         # Basic settings
-        summary = {
+        summary: Dict[str, Any] = {
             'app_name': settings.app_name,
             'debug': settings.debug,
             'api_v1_prefix': settings.api_v1_prefix,
-            'notion_configured': bool(settings.notion_api_key and settings.notion_personal_database_id),
+            'notion_configured': bool(settings.notion_api_key and settings.notion_database_id),
             'webhook_api_key_configured': bool(settings.webhook_api_key),
             'google_shared_credentials': bool(settings.google_client_id and settings.google_client_secret),
             'daily_sync_hour': settings.daily_sync_hour,
@@ -233,7 +235,7 @@ def get_environment_summary() -> Dict[str, Any]:
 
 
 # Global settings instance
-settings = Settings()
+settings = Settings()  # type: ignore
 
 
 # Export commonly used configurations
