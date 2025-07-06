@@ -15,6 +15,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError  # type: ignore
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,12 @@ class GoogleCalendarClient:
             self._service = build('calendar', 'v3', credentials=credentials)  # type: ignore
         return self._service  # type: ignore
     
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type((HttpError, ConnectionError, TimeoutError)),
+        reraise=True
+    )
     def list_calendars(self) -> List[Dict[str, Any]]:
         """List all accessible calendars.
         
@@ -97,6 +104,12 @@ class GoogleCalendarClient:
             logger.error(f"Unexpected error listing calendars: {e}")
             raise GoogleCalendarError(f"Unexpected error: {e}")
     
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type((HttpError, ConnectionError, TimeoutError)),
+        reraise=True
+    )
     def get_events(self, calendar_id: str, start_time: datetime, end_time: datetime) -> List[Dict[str, Any]]:
         """Get events from a calendar within a time range.
         
@@ -152,6 +165,12 @@ class GoogleCalendarClient:
             logger.error(f"Unexpected error getting events for calendar {calendar_id}: {e}")
             raise GoogleCalendarError(f"Unexpected error: {e}")
     
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type((HttpError, ConnectionError, TimeoutError)),
+        reraise=True
+    )
     def create_event(self, calendar_id: str, title: str, start_time: datetime, end_time: datetime, 
                     description: str = "", participants: Optional[List[str]] = None) -> Dict[str, Any]:
         """Create a new event in the specified calendar.
@@ -199,6 +218,12 @@ class GoogleCalendarClient:
             logger.error(f"Unexpected error creating event in calendar {calendar_id}: {e}")
             raise GoogleCalendarError(f"Unexpected error: {e}")
     
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type((HttpError, ConnectionError, TimeoutError)),
+        reraise=True
+    )
     def delete_event(self, calendar_id: str, event_id: str) -> bool:
         """Delete an event from the specified calendar.
         
@@ -337,6 +362,12 @@ class GoogleCalendarClient:
             logger.error(f"Connection test failed: {e}")
             return False
     
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type((HttpError, ConnectionError, TimeoutError)),
+        reraise=True
+    )
     def create_push_notification_channel(self, calendar_id: str, webhook_url: str, 
                                        channel_id: str, channel_token: Optional[str] = None) -> Dict[str, Any]:
         """Create a push notification channel for calendar events.
@@ -387,6 +418,12 @@ class GoogleCalendarClient:
             logger.error(f"Unexpected error creating push notification channel for calendar {calendar_id}: {e}")
             raise GoogleCalendarError(f"Unexpected error: {e}")
     
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type((HttpError, ConnectionError, TimeoutError)),
+        reraise=True
+    )
     def stop_push_notification_channel(self, channel_id: str, resource_id: str) -> bool:
         """Stop a push notification channel.
         

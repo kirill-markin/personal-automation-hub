@@ -24,6 +24,7 @@ dependencies = [
     "google-auth-oauthlib>=1.1.0",
     "google-auth-httplib2>=0.2.0",
     "apscheduler>=3.10.4",
+    "tenacity>=8.2.3",
 ]
 
 [project.optional-dependencies]
