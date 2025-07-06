@@ -22,7 +22,7 @@ import os
 import sys
 import argparse
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Tuple
 from datetime import datetime, timedelta
 import pytest
 from dotenv import load_dotenv
@@ -41,9 +41,6 @@ from backend.services.google_calendar.sync_engine import CalendarSyncEngine
 from backend.models.calendar import (
     MultiAccountConfig, 
     CalendarEvent, 
-    BusyBlock, 
-    SyncFlow,
-    EventProcessingResult,
     CalendarSyncResult
 )
 
@@ -362,7 +359,7 @@ def test_process_event_with_single_participant():
             assert result.event_title == title
             assert result.sync_type == "test"
             assert result.action == 'skipped', f"Single participant event should be skipped, got: {result.action}"
-            assert "doesn't meet criteria" in result.reason
+            assert result.reason and "doesn't meet criteria" in result.reason
         
         # Verify no busy block was created
         busy_blocks = helper.find_busy_blocks_by_title(
@@ -432,7 +429,7 @@ def test_event_deletion_removes_busy_block():
         )
         
         # Process event to create busy block
-        results = sync_engine.process_event(event, "test")
+        _ = sync_engine.process_event(event, "test")
         
         # Verify busy block was created
         busy_blocks_before = helper.find_busy_blocks_by_title(
@@ -564,7 +561,7 @@ def test_sync_all_source_calendars():
     assert result.sync_type == "test"
     
     # Verify we have results for each unique source calendar
-    unique_calendars = set()
+    unique_calendars: set[Tuple[int, str]] = set()
     for flow in config.sync_flows:
         unique_calendars.add((flow.source_account_id, flow.source_calendar_id))
     
@@ -621,7 +618,7 @@ def test_idempotent_busy_block_creation():
         )
         
         # Process event first time
-        results1 = sync_engine.process_event(event, "test")
+        _ = sync_engine.process_event(event, "test")
         
         # Count busy blocks after first processing
         busy_blocks_after_first = helper.find_busy_blocks_by_title(
@@ -686,7 +683,7 @@ def test_multi_flow_processing():
         pytest.skip("Need at least 2 sync flows for multi-flow testing")
     
     # Find flows that share a source calendar
-    source_calendar_flows = {}
+    source_calendar_flows: Dict[Tuple[int, str], List[Any]] = {}
     for flow in config.sync_flows:
         key = (flow.source_account_id, flow.source_calendar_id)
         if key not in source_calendar_flows:
@@ -694,7 +691,7 @@ def test_multi_flow_processing():
         source_calendar_flows[key].append(flow)
     
     # Find a source calendar with multiple flows
-    multi_flow_calendar = None
+    multi_flow_calendar: Tuple[int, str] | None = None
     for key, flows in source_calendar_flows.items():
         if len(flows) > 1:
             multi_flow_calendar = key
@@ -703,8 +700,8 @@ def test_multi_flow_processing():
     if multi_flow_calendar is None:
         pytest.skip("No source calendar with multiple flows found")
     
-    account_id, calendar_id = multi_flow_calendar
-    applicable_flows = source_calendar_flows[multi_flow_calendar]
+    account_id, calendar_id = multi_flow_calendar  # type: ignore
+    applicable_flows = source_calendar_flows[multi_flow_calendar]  # type: ignore
     
     # Create mock event
     event = CalendarEvent(
