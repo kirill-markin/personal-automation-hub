@@ -8,6 +8,12 @@ output "public_subnet_id" {
   value       = aws_subnet.public.id
 }
 
+# S3 bucket output
+output "ssl_certificates_bucket" {
+  description = "S3 bucket for SSL certificates backup"
+  value       = aws_s3_bucket.ssl_certs.id
+}
+
 # EC2 outputs
 output "ec2_public_ip" {
   description = "The public IP address of the EC2 instance"

@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.97.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.1"
+    }
   }
   required_version = ">= 1.0.0"
 
@@ -130,6 +134,7 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app_server.id]
   subnet_id              = aws_subnet.public.id
   associate_public_ip_address = true
+  iam_instance_profile   = aws_iam_instance_profile.ec2_ssl_profile.name
 
   user_data = <<-EOF
     #!/bin/bash
@@ -218,36 +223,76 @@ EOF_ENV
     # Create Nginx config based on whether domain is set
     if [ "${var.domain_name != null ? var.domain_name : ""}" != "" ]; then
       echo "Domain specified: ${var.domain_name}"
-      echo "HTTPS-only setup - will fail if SSL certificate cannot be obtained"
+      echo "HTTPS setup with S3 backup/restore"
       
       # Install Certbot first
       echo "Installing Certbot..."
       amazon-linux-extras install epel -y
       yum install -y certbot python2-certbot-nginx
       
-      # Stop Nginx temporarily to allow Certbot to bind to port 80
-      service nginx stop
+      # S3 bucket for SSL certificates
+      S3_BUCKET="${aws_s3_bucket.ssl_certs.id}"
+      DOMAIN="${var.domain_name}"
       
-      # Try to get SSL certificate - FAIL if unsuccessful
-      echo "Attempting to get SSL certificate for ${var.domain_name}..."
-      certbot certonly --standalone --non-interactive --agree-tos \
-        --email admin@${var.domain_name} \
-        -d ${var.domain_name} \
-        --preferred-challenges http
-      
-      # Check if certificate was obtained
-      if [ ! -f "/etc/letsencrypt/live/${var.domain_name}/fullchain.pem" ]; then
-        echo "ERROR: Failed to obtain SSL certificate for ${var.domain_name}"
-        echo "Cannot proceed with HTTPS-only setup"
-        exit 1
+      # Try to restore SSL certificates from S3
+      echo "Attempting to restore SSL certificates from S3..."
+      if aws s3 cp s3://$S3_BUCKET/live/$DOMAIN/ /etc/letsencrypt/live/$DOMAIN/ --recursive 2>/dev/null; then
+        echo "SSL certificates restored from S3"
+        # Also restore other necessary files
+        aws s3 cp s3://$S3_BUCKET/archive/$DOMAIN/ /etc/letsencrypt/archive/$DOMAIN/ --recursive 2>/dev/null
+        aws s3 cp s3://$S3_BUCKET/renewal/$DOMAIN.conf /etc/letsencrypt/renewal/$DOMAIN.conf 2>/dev/null
+        
+        # Verify certificate is valid (not expired)
+        if openssl x509 -checkend 86400 -noout -in /etc/letsencrypt/live/$DOMAIN/cert.pem; then
+          echo "Restored SSL certificate is valid"
+          SSL_CERT_EXISTS=true
+        else
+          echo "Restored SSL certificate is expired, will get new one"
+          SSL_CERT_EXISTS=false
+        fi
+      else
+        echo "No SSL certificates found in S3"
+        SSL_CERT_EXISTS=false
       fi
       
-      echo "SSL certificate obtained successfully!"
-      # Create HTTPS config
-      cat > /etc/nginx/conf.d/app.conf << EOF_NGINX
+      # Get new SSL certificate if needed
+      if [ "$SSL_CERT_EXISTS" != "true" ]; then
+        echo "Getting new SSL certificate for $DOMAIN..."
+        
+        # Stop Nginx temporarily to allow Certbot to bind to port 80
+        service nginx stop
+        
+        # Try to get SSL certificate
+        echo "Attempting to get SSL certificate for $DOMAIN..."
+        if certbot certonly --standalone --non-interactive --agree-tos \
+          --email admin@$DOMAIN \
+          -d $DOMAIN \
+          --preferred-challenges http; then
+          
+          echo "SSL certificate obtained successfully!"
+          
+          # Backup new certificate to S3
+          echo "Backing up SSL certificate to S3..."
+          aws s3 cp /etc/letsencrypt/live/$DOMAIN/ s3://$S3_BUCKET/live/$DOMAIN/ --recursive
+          aws s3 cp /etc/letsencrypt/archive/$DOMAIN/ s3://$S3_BUCKET/archive/$DOMAIN/ --recursive
+          aws s3 cp /etc/letsencrypt/renewal/$DOMAIN.conf s3://$S3_BUCKET/renewal/$DOMAIN.conf
+          
+          SSL_CERT_EXISTS=true
+        else
+          echo "Failed to obtain SSL certificate"
+          SSL_CERT_EXISTS=false
+        fi
+      fi
+      
+      # Check if we have valid SSL certificate
+      if [ "$SSL_CERT_EXISTS" = "true" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+        echo "SSL certificate is available. Creating HTTPS configuration..."
+        
+        # Create HTTPS config
+        cat > /etc/nginx/conf.d/app.conf << EOF_NGINX
 server {
     listen 80;
-    server_name ${var.domain_name};
+    server_name $DOMAIN;
 
     # Redirect HTTP to HTTPS
     location / {
@@ -257,11 +302,11 @@ server {
 
 server {
     listen 443 ssl;
-    server_name ${var.domain_name};
+    server_name $DOMAIN;
 
     # SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/${var.domain_name}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${var.domain_name}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
     ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
@@ -275,12 +320,20 @@ server {
     }
 }
 EOF_NGINX
-      
-      # Set up certificate renewal cron job
-      echo "0 3 * * * /usr/bin/certbot renew --quiet --post-hook 'service nginx reload'" > /etc/cron.d/certbot-renew
-      
-      # Start Nginx
-      service nginx start
+        
+        # Set up certificate renewal cron job with S3 backup
+        cat > /etc/cron.d/certbot-renew << EOF_CRON
+0 3 * * * root /usr/bin/certbot renew --quiet --post-hook 'service nginx reload && aws s3 cp /etc/letsencrypt/live/$DOMAIN/ s3://$S3_BUCKET/live/$DOMAIN/ --recursive && aws s3 cp /etc/letsencrypt/archive/$DOMAIN/ s3://$S3_BUCKET/archive/$DOMAIN/ --recursive'
+EOF_CRON
+        
+        # Start Nginx
+        service nginx start
+        
+      else
+        echo "ERROR: Could not obtain or restore SSL certificate for $DOMAIN"
+        echo "Cannot proceed with HTTPS-only setup"
+        exit 1
+      fi
       
     else
       # Create HTTP only config
@@ -336,4 +389,99 @@ data "aws_ami" "amazon_linux_2" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
+}
+
+# S3 bucket for SSL certificates backup
+resource "aws_s3_bucket" "ssl_certs" {
+  bucket = "${var.project_name}-ssl-certificates-${random_string.bucket_suffix.result}"
+  
+  tags = {
+    Name        = "${var.project_name}-ssl-certificates"
+    Environment = "production"
+  }
+}
+
+# Random string for bucket naming
+resource "random_string" "bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
+# S3 bucket versioning
+resource "aws_s3_bucket_versioning" "ssl_certs" {
+  bucket = aws_s3_bucket.ssl_certs.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# S3 bucket encryption
+resource "aws_s3_bucket_server_side_encryption_configuration" "ssl_certs" {
+  bucket = aws_s3_bucket.ssl_certs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# S3 bucket public access block
+resource "aws_s3_bucket_public_access_block" "ssl_certs" {
+  bucket = aws_s3_bucket.ssl_certs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# IAM role for EC2 to access S3
+resource "aws_iam_role" "ec2_ssl_role" {
+  name = "${var.project_name}-ec2-ssl-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# IAM policy for S3 access
+resource "aws_iam_role_policy" "ec2_ssl_policy" {
+  name = "${var.project_name}-ec2-ssl-policy"
+  role = aws_iam_role.ec2_ssl_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.ssl_certs.arn,
+          "${aws_s3_bucket.ssl_certs.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+# IAM instance profile
+resource "aws_iam_instance_profile" "ec2_ssl_profile" {
+  name = "${var.project_name}-ec2-ssl-profile"
+  role = aws_iam_role.ec2_ssl_role.name
 } 
