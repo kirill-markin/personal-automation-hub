@@ -116,6 +116,7 @@ class CalendarEvent(BaseModel):
     status: str
     creator: str
     organizer: str
+    transparency: str  # "opaque" (busy) or "transparent" (free)
 ```
 
 #### Processing Models
@@ -150,7 +151,8 @@ Events are processed only if they meet these criteria:
 
 1. **Participant Count**: Must have 2 or more participants
 2. **Event Status**: Must be "confirmed" (not cancelled or tentative)
-3. **Account Match**: Must belong to a configured source calendar
+3. **Event Transparency**: Must be "opaque" (busy) - "transparent" (free) events are ignored
+4. **Account Match**: Must belong to a configured source calendar
 
 ### Busy Block Management
 
@@ -181,6 +183,26 @@ For each incoming event:
    - Handle cancelled events (delete busy blocks)
    - Handle active events (create busy blocks)
 3. **Track Results**: Log processing results and update statistics
+
+### Transparency (Busy/Free) Logic
+
+The system respects Google Calendar's transparency setting for fine-grained control:
+
+1. **Busy Events (opaque)**:
+   - Create busy blocks in target calendars
+   - Standard synchronization behavior
+   - Default setting for new events
+
+2. **Free Events (transparent)**:
+   - Skip busy block creation
+   - Existing busy blocks are deleted if event changes to free
+   - Allows for "tentative" or "available" events that shouldn't block time
+
+3. **Dynamic Updates**:
+   - Real-time webhook updates handle transparency changes
+   - Changing from busy to free deletes existing busy blocks
+   - Changing from free to busy creates new busy blocks
+   - Maintains consistency across all synchronized calendars
 
 ## Real-Time Synchronization
 

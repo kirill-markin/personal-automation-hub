@@ -345,7 +345,8 @@ class GoogleCalendarClient:
             'participant_count': len(participants),
             'status': event.get('status', 'unknown'),
             'creator': event.get('creator', {}).get('email', ''),
-            'organizer': event.get('organizer', {}).get('email', '')
+            'organizer': event.get('organizer', {}).get('email', ''),
+            'transparency': event.get('transparency', 'opaque')  # opaque = busy, transparent = free
         }
     
     def test_connection(self) -> bool:

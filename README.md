@@ -15,7 +15,7 @@ A personal automation hub for integrating various services.
 - Daily backup sync via polling
 - Multi-account support (personal + work calendars)
 - Configurable time offsets for busy blocks
-- Event filtering (2+ participants required)
+- Event filtering (2+ participants required, busy/free transparency)
 - Idempotent operations (duplicate-safe)
 
 ## Setup
@@ -257,6 +257,7 @@ For detailed Google Calendar synchronization setup:
 ### Google Calendar Features
 
 - **Event Filtering**: Only events with 2+ participants are synced
+- **Busy/Free Transparency**: Only events marked as 'busy' (opaque) are synced; 'free' (transparent) events are ignored
 - **Time Offsets**: Configurable minutes before/after event for busy blocks
 - **Real-time Sync**: Webhooks provide immediate synchronization
 - **Backup Sync**: Daily polling catches any missed events
@@ -269,3 +270,14 @@ For detailed Google Calendar synchronization setup:
 - **Team Coordination**: Share availability across team members
 - **Client Management**: Different buffer times for different client types
 - **Multiple Views**: One calendar syncing to multiple target calendars
+
+### Transparency (Busy/Free) Logic
+
+The system now respects the Google Calendar transparency setting:
+
+- **Busy Events (opaque)**: Events marked as "busy" will create busy blocks in target calendars
+- **Free Events (transparent)**: Events marked as "free" will be ignored and no busy blocks will be created
+- **Automatic Cleanup**: If you change an event from busy to free, existing busy blocks will be automatically deleted
+- **Dynamic Updates**: Real-time webhook updates handle transparency changes immediately
+
+This allows for more granular control over which events should block time in synchronized calendars.

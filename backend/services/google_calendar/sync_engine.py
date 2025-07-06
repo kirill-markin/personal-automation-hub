@@ -159,20 +159,26 @@ class CalendarSyncEngine:
                     reason=None
                 )
             
-            # For active events, check if they meet criteria (2+ participants, confirmed)
+            # For active events, check if they meet criteria (2+ participants, confirmed, busy)
             if not self._event_meets_criteria(event):
+                # Event doesn't meet criteria - remove busy block if it exists
+                deleted = self._delete_busy_block_for_event(event, flow)
+                action = 'deleted' if deleted else 'skipped'
+                if deleted:
+                    self.stats['busy_blocks_deleted'] += 1
+                
                 return EventProcessingResult(
                     flow_name=flow.name,
                     event_id=event.id,
                     event_title=event.title,
                     sync_type=sync_type,
                     success=True,
-                    action='skipped',
+                    action=action,
                     error=None,
-                    reason=f"Event doesn't meet criteria (participants: {event.participant_count}, status: {event.status})"
+                    reason=f"Event doesn't meet criteria (participants: {event.participant_count}, status: {event.status}, transparency: {event.transparency})"
                 )
             
-            # Handle active event - create busy block
+            # Handle active event that meets criteria - create busy block
             created = self._create_busy_block_for_event(event, flow)
             action = 'created' if created else 'existed'
             if created:
@@ -218,6 +224,10 @@ class CalendarSyncEngine:
         
         # Must be confirmed (not cancelled, tentative, etc.)
         if not event.is_confirmed():
+            return False
+        
+        # Must be marked as busy (opaque transparency)
+        if not event.is_busy():
             return False
         
         return True
@@ -370,7 +380,8 @@ class CalendarSyncEngine:
                         participant_count=event_data.get('participant_count', 0),
                         status=event_data.get('status', 'unknown'),
                         creator=event_data.get('creator', ''),
-                        organizer=event_data.get('organizer', '')
+                        organizer=event_data.get('organizer', ''),
+                        transparency=event_data.get('transparency', 'opaque')
                     )
                     
                     # Process event through sync flows

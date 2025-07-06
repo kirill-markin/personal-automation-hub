@@ -99,6 +99,7 @@ class CalendarEvent(BaseModel):
     status: str = Field(..., description="Event status (confirmed, cancelled, etc.)")
     creator: str = Field(default="", description="Event creator email")
     organizer: str = Field(default="", description="Event organizer email")
+    transparency: str = Field(default="opaque", description="Event transparency (opaque = busy, transparent = free)")
     
     @model_validator(mode='after')
     def validate_fields(self) -> 'CalendarEvent':
@@ -119,6 +120,14 @@ class CalendarEvent(BaseModel):
     def is_cancelled(self) -> bool:
         """Check if event is cancelled."""
         return self.status.lower() == 'cancelled'
+    
+    def is_busy(self) -> bool:
+        """Check if event is marked as busy (opaque transparency)."""
+        return self.transparency.lower() == 'opaque'
+    
+    def is_free(self) -> bool:
+        """Check if event is marked as free (transparent transparency)."""
+        return self.transparency.lower() == 'transparent'
 
 
 class BusyBlockSearchCriteria(BaseModel):
