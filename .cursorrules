@@ -127,6 +127,38 @@ Then run Terraform commands:
 cd terraform && terraform init && terraform apply  # Deploys EC2 instance to AWS
 ```
 
+## Code Deployment Commands
+
+### Deployment Script Usage
+
+Use the deployment script for convenient code updates:
+
+```bash
+# Quick deployment (recommended for most changes)
+./scripts/deploy.sh quick
+
+# Full recreation (for major changes or when something is broken)
+./scripts/deploy.sh recreate
+```
+
+### When to Use Each Method
+
+- **Quick deployment**: Code changes, configuration updates (5-10 seconds)
+- **Full recreation**: Dependency changes, system fixes, "nuclear option" (2-3 minutes)
+
+### Manual Deployment
+
+```bash
+# Quick method (SSH + Git Pull)
+INSTANCE_IP=$(cd terraform && terraform output -raw elastic_ip)
+ssh ec2-user@$INSTANCE_IP "cd /opt/app && sudo git pull origin main && sudo /usr/local/bin/docker-compose down && sudo /usr/local/bin/docker-compose up -d --build"
+
+# Full recreation method
+cd terraform && terraform taint aws_instance.app_server && terraform apply
+```
+
+**IMPORTANT**: Changes must be pushed to GitHub before deployment - EC2 instance pulls code from the repository.
+
 ## Production URLs and API Keys
 
 ### How to Find Current Production Info

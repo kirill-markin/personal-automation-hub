@@ -230,6 +230,51 @@ curl -X POST "$WEBHOOK_URL" \
     -d '{"title": "Production test with content", "body": "This is a test task with body content to verify the API is working correctly."}'
 ```
 
+## Code Deployment
+
+### Deployment Script
+
+Use the deployment script for convenient code updates:
+
+```bash
+# Quick deployment (recommended for most changes)
+./scripts/deploy.sh quick
+
+# Full recreation (for major changes or when something is broken)
+./scripts/deploy.sh recreate
+```
+
+### Deployment Methods
+
+1. **Quick Deployment** (`./scripts/deploy.sh quick`)
+   - ⚡ Fast: 5-10 seconds
+   - 🔄 Minimal downtime: ~2-3 seconds
+   - ✅ Good for: code changes, configuration updates
+   - ❌ Not for: dependency changes, system-level changes
+
+2. **Full Recreation** (`./scripts/deploy.sh recreate`)
+   - 🐌 Slow: 2-3 minutes
+   - 🔄 Downtime: ~1-2 minutes
+   - ✅ Good for: dependency changes, system fixes, "nuclear option"
+   - ✅ Guarantees: clean state, latest code
+
+### Manual Deployment
+
+For manual deployment without the script:
+
+```bash
+# Quick method (SSH + Git Pull)
+INSTANCE_IP=$(cd terraform && terraform output -raw elastic_ip)
+ssh ec2-user@$INSTANCE_IP "cd /opt/app && sudo git pull origin main && sudo /usr/local/bin/docker-compose down && sudo /usr/local/bin/docker-compose up -d --build"
+
+# Full recreation method
+cd terraform
+terraform taint aws_instance.app_server
+terraform apply
+```
+
+**Note:** Changes must be pushed to GitHub before deployment - EC2 instance pulls code from the repository.
+
 ## Google Calendar Setup
 
 For detailed Google Calendar synchronization setup:
