@@ -11,7 +11,8 @@ This module tests the logic for handling event transparency:
 from datetime import datetime
 from unittest.mock import Mock
 
-from backend.models.calendar import CalendarEvent, SyncFlow, GoogleAccount, MultiAccountConfig
+from backend.models.google_account import GoogleAccount
+from backend.models.calendar import CalendarEvent, SyncFlow, MultiAccountConfig
 from backend.services.google_calendar.sync_engine import CalendarSyncEngine
 from backend.services.google_calendar.account_manager import AccountManager
 

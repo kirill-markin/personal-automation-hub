@@ -9,7 +9,8 @@ This module provides:
 
 import logging
 from typing import Dict, List, Optional, Any
-from backend.models.calendar import GoogleAccount, MultiAccountConfig
+from backend.models.google_account import GoogleAccount
+from backend.models.calendar import MultiAccountConfig
 from backend.services.google_calendar.client import GoogleCalendarClient, GoogleCalendarError
 
 logger = logging.getLogger(__name__)

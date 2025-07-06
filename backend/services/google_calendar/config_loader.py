@@ -9,8 +9,8 @@ import os
 import logging
 from typing import Dict, List, Any
 
+from backend.models.google_account import GoogleAccount
 from backend.models.calendar import (
-    GoogleAccount, 
     SyncFlow, 
     MultiAccountConfig
 )
