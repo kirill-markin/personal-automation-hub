@@ -49,13 +49,13 @@ max_google_accounts = 10      # Maximum accounts to scan for
 max_sync_flows = 50          # Maximum sync flows to scan for
 
 # Google Account 1 Configuration (optional)
-google_account_1_name = "Personal Gmail"
+google_account_1_email = "personal@gmail.com"
 google_account_1_client_id = "your-google-client-id.apps.googleusercontent.com"
 google_account_1_client_secret = "your-google-client-secret"
 google_account_1_refresh_token = "your-account-1-refresh-token"
 
 # Google Account 2 Configuration (optional)
-google_account_2_name = "Work Account"
+google_account_2_email = "work@company.com"
 google_account_2_client_id = "your-google-client-id.apps.googleusercontent.com"
 google_account_2_client_secret = "your-google-client-secret"
 google_account_2_refresh_token = "your-account-2-refresh-token"

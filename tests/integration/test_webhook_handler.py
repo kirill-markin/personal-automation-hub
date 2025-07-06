@@ -422,7 +422,7 @@ def test_get_monitored_calendars():
         assert isinstance(calendar, MonitoredCalendar)
         assert calendar.calendar_id is not None
         assert calendar.account_id is not None
-        assert calendar.account_name is not None
+        assert calendar.account_email is not None
         assert calendar.flow_name is not None
         
         # Verify corresponds to sync flow
@@ -434,7 +434,7 @@ def test_get_monitored_calendars():
         # Verify account name matches
         account = config.get_account_by_id(flow.source_account_id)
         if account:
-            assert calendar.account_name == account.name
+            assert calendar.account_email == account.email
     
     logger.info(f"Found {len(monitored_calendars)} monitored calendars")
 
@@ -620,7 +620,7 @@ def run_webhook_processing_manual(config: MultiAccountConfig) -> None:
         print(f"\nMonitored Calendars:")
         monitored = webhook_handler.get_monitored_calendars()
         for calendar in monitored:
-            print(f"   - {calendar.calendar_id} ({calendar.account_name})")
+            print(f"   - {calendar.calendar_id} ({calendar.account_email})")
         
     except Exception as e:
         print(f"❌ Error during manual test: {e}")

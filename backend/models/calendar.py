@@ -18,7 +18,7 @@ class GoogleAccount(BaseModel):
     """Configuration for a single Google account."""
     
     account_id: int = Field(..., description="Unique account identifier")
-    name: str = Field(..., description="Human-readable account name")
+    email: str = Field(..., description="Google account email address")
     client_id: str = Field(..., description="Google OAuth2 client ID")
     client_secret: str = Field(..., description="Google OAuth2 client secret")
     refresh_token: str = Field(..., description="OAuth2 refresh token for this account")
@@ -29,10 +29,10 @@ class GoogleAccount(BaseModel):
         if self.account_id <= 0:
             raise ValueError('account_id must be positive')
         
-        # Validate name
-        if not self.name.strip():
-            raise ValueError('name cannot be empty')
-        self.name = self.name.strip()
+        # Validate email
+        if not self.email.strip():
+            raise ValueError('email cannot be empty')
+        self.email = self.email.strip()
         
         # Validate client_id
         if not self.client_id.strip():
@@ -287,7 +287,7 @@ class MonitoredCalendar(BaseModel):
     
     calendar_id: str = Field(..., description="Calendar ID")
     account_id: int = Field(..., description="Account ID")
-    account_name: str = Field(..., description="Account name")
+    account_email: str = Field(..., description="Account email address")
     flow_name: str = Field(..., description="Sync flow name")
 
 
@@ -295,7 +295,7 @@ class AccountSummary(BaseModel):
     """Summary information for a Google account."""
     
     account_id: int = Field(..., description="Account ID")
-    name: str = Field(..., description="Account name")
+    email: str = Field(..., description="Account email address")
     connection_ok: bool = Field(..., description="Whether connection is working")
     calendar_count: int = Field(..., description="Number of accessible calendars")
     client_cached: bool = Field(..., description="Whether client is cached")
@@ -328,10 +328,10 @@ class SyncFlowInfo(BaseModel):
     
     name: str = Field(..., description="Sync flow name")
     source_account_id: int = Field(..., description="Source account ID")
-    source_account_name: str = Field(..., description="Source account name")
+    source_account_email: str = Field(..., description="Source account email")
     source_calendar_id: str = Field(..., description="Source calendar ID")
     target_account_id: int = Field(..., description="Target account ID")
-    target_account_name: str = Field(..., description="Target account name")
+    target_account_email: str = Field(..., description="Target account email")
     target_calendar_id: str = Field(..., description="Target calendar ID")
     start_offset: int = Field(..., description="Start offset in minutes")
     end_offset: int = Field(..., description="End offset in minutes")
@@ -345,7 +345,7 @@ class CalendarInfo(BaseModel):
     access_role: str = Field(..., description="Access role (owner, reader, writer, etc.)")
     primary: bool = Field(..., description="Whether this is the primary calendar")
     account_id: int = Field(..., description="Account ID this calendar belongs to")
-    account_name: str = Field(..., description="Account name")
+    account_email: str = Field(..., description="Account email address")
 
 
 class JobHistoryEntry(BaseModel):

@@ -44,7 +44,7 @@ class CalendarInfo(TypedDict):
 class AccountResult(TypedDict):
     """Account result structure."""
     account_id: int
-    account_name: str
+    account_email: str
     success: bool
     error: str | None
     calendars: List[CalendarInfo]
@@ -62,7 +62,7 @@ def get_calendars_for_account(account_manager: AccountManager, account_id: int) 
     """
     result: AccountResult = {
         "account_id": account_id,
-        "account_name": "Unknown",
+        "account_email": "Unknown",
         "success": False,
         "error": None,
         "calendars": []
@@ -72,7 +72,7 @@ def get_calendars_for_account(account_manager: AccountManager, account_id: int) 
         # Get account info
         account = account_manager.get_account(account_id)
         if account:
-            result["account_name"] = account.name
+            result["account_email"] = account.email
         
         # Test connection first
         logger.info(f"Testing connection to account {account_id}...")
@@ -102,7 +102,7 @@ def get_calendars_for_account(account_manager: AccountManager, account_id: int) 
         result["calendars"] = processed_calendars
         result["success"] = True
         
-        logger.info(f"✅ Account {account_id} ({result['account_name']}): {len(calendars)} calendars")
+        logger.info(f"✅ Account {account_id} ({result['account_email']}): {len(calendars)} calendars")
         
     except Exception as e:
         logger.error(f"❌ Account {account_id}: Error - {e}")
@@ -123,12 +123,12 @@ def display_calendars(results: List[AccountResult]) -> None:
     
     for result in results:
         account_id = result["account_id"]
-        account_name = result["account_name"]
+        account_email = result["account_email"]
         success = result["success"]
         error = result["error"]
         calendars = result["calendars"]
         
-        print(f"\n🔵 Account {account_id}: {account_name}")
+        print(f"\n🔵 Account {account_id}: {account_email}")
         print("-" * 60)
         
         if not success:

@@ -115,17 +115,17 @@ def discover_google_accounts(max_accounts: int = 10) -> Dict[str, Any]:
     
     for account_id in range(1, max_accounts + 1):
         account_env_vars = {
-            'name': f"GOOGLE_ACCOUNT_{account_id}_NAME",
+            'email': f"GOOGLE_ACCOUNT_{account_id}_EMAIL",
             'client_id': f"GOOGLE_ACCOUNT_{account_id}_CLIENT_ID",
             'client_secret': f"GOOGLE_ACCOUNT_{account_id}_CLIENT_SECRET",
             'refresh_token': f"GOOGLE_ACCOUNT_{account_id}_REFRESH_TOKEN"
         }
         
-        # Check if account exists (at least name variable is set)
-        if account_env_vars['name'] in os.environ:
+        # Check if account exists (at least email variable is set)
+        if account_env_vars['email'] in os.environ:
             account_data = {
                 'account_id': account_id,
-                'name': os.environ.get(account_env_vars['name'], ''),
+                'email': os.environ.get(account_env_vars['email'], ''),
                 'has_client_id': bool(os.environ.get(account_env_vars['client_id'], '')),
                 'has_client_secret': bool(os.environ.get(account_env_vars['client_secret'], '')),
                 'has_refresh_token': bool(os.environ.get(account_env_vars['refresh_token'], '')),

@@ -53,11 +53,11 @@ def test_load_configuration():
     
     # Validate each account has required fields
     for account in config.accounts:
-        assert account.account_id is not None, f"Account {account.name} missing account_id"
-        assert account.name, f"Account {account.account_id} missing name"
-        assert account.client_id, f"Account {account.name} missing client_id"
-        assert account.client_secret, f"Account {account.name} missing client_secret"
-        assert account.refresh_token, f"Account {account.name} missing refresh_token"
+        assert account.account_id is not None, f"Account {account.email} missing account_id"
+        assert account.email, f"Account {account.account_id} missing email"
+        assert account.client_id, f"Account {account.email} missing client_id"
+        assert account.client_secret, f"Account {account.email} missing client_secret"
+        assert account.refresh_token, f"Account {account.email} missing refresh_token"
 
 
 @pytest.mark.integration
@@ -70,7 +70,7 @@ def test_account_manager_creation():
     for account in config.accounts:
         retrieved_account = account_manager.get_account(account.account_id)
         assert retrieved_account is not None, f"Account {account.account_id} not found in manager"
-        assert retrieved_account.name == account.name, f"Account name mismatch for {account.account_id}"
+        assert retrieved_account.email == account.email, f"Account email mismatch for {account.account_id}"
 
 
 @pytest.mark.integration
@@ -80,9 +80,9 @@ def test_account_connections():
     account_manager = AccountManager(config)
     
     for account in config.accounts:
-        logger.info(f"Testing connection to account {account.account_id} ({account.name})...")
+        logger.info(f"Testing connection to account {account.account_id} ({account.email})...")
         connection_ok = account_manager.test_account_connection(account.account_id)
-        assert connection_ok, f"Connection failed for account {account.account_id} ({account.name})"
+        assert connection_ok, f"Connection failed for account {account.account_id} ({account.email})"
 
 
 @pytest.mark.integration
@@ -92,9 +92,9 @@ def test_calendar_access():
     account_manager = AccountManager(config)
     
     for account in config.accounts:
-        logger.info(f"Testing calendar access for account {account.account_id} ({account.name})...")
+        logger.info(f"Testing calendar access for account {account.account_id} ({account.email})...")
         calendars = account_manager.list_calendars_for_account(account.account_id)
-        assert len(calendars) > 0, f"No calendars found for account {account.account_id} ({account.name})"
+        assert len(calendars) > 0, f"No calendars found for account {account.account_id} ({account.email})"
 
 
 @pytest.mark.integration
@@ -137,7 +137,7 @@ def check_single_account(account_manager: AccountManager, account_id: int) -> Di
     """
     results = {  # type: ignore
         "account_id": account_id,
-        "account_name": "Unknown",
+        "account_email": "Unknown",
         "connection_test": False,
         "calendar_count": 0,
         "calendars": [],
@@ -148,7 +148,7 @@ def check_single_account(account_manager: AccountManager, account_id: int) -> Di
         # Get account info
         account = account_manager.get_account(account_id)
         if account:
-            results["account_name"] = account.name
+            results["account_email"] = account.email
         
         # Test connection
         logger.info(f"Testing connection to account {account_id}...")
@@ -162,9 +162,9 @@ def check_single_account(account_manager: AccountManager, account_id: int) -> Di
             results["calendar_count"] = len(calendars)
             results["calendars"] = calendars
             
-            logger.info(f"✅ Account {account_id} ({results['account_name']}): {len(calendars)} calendars")
+            logger.info(f"✅ Account {account_id} ({results['account_email']}): {len(calendars)} calendars")
         else:
-            logger.error(f"❌ Account {account_id} ({results['account_name']}): Connection failed")
+            logger.error(f"❌ Account {account_id} ({results['account_email']}): Connection failed")
             results["error"] = "Connection test failed"
             
     except Exception as e:
@@ -214,13 +214,13 @@ def display_account_results(results: List[Dict[str, Any]]) -> None:
     
     for result in results:
         account_id = result["account_id"]
-        account_name = result["account_name"]
+        account_email = result["account_email"]
         connection_ok = result["connection_test"]
         calendar_count = result["calendar_count"]
         calendars = result["calendars"]
         error = result["error"]
         
-        print(f"\nAccount {account_id}: {account_name}")
+        print(f"\nAccount {account_id}: {account_email}")
         print("-" * 40)
         
         if error:
@@ -275,7 +275,7 @@ def check_sync_flows(config: MultiAccountConfig) -> None:
         # Check source account
         source_account = account_manager.get_account(flow.source_account_id)
         if source_account:
-            print(f"✅ Source: Account {flow.source_account_id} ({source_account.name})")
+            print(f"✅ Source: Account {flow.source_account_id} ({source_account.email})")
             print(f"   Calendar: {flow.source_calendar_id}")
         else:
             print(f"❌ Source: Account {flow.source_account_id} (NOT FOUND)")
@@ -283,7 +283,7 @@ def check_sync_flows(config: MultiAccountConfig) -> None:
         # Check target account
         target_account = account_manager.get_account(flow.target_account_id)
         if target_account:
-            print(f"✅ Target: Account {flow.target_account_id} ({target_account.name})")
+            print(f"✅ Target: Account {flow.target_account_id} ({target_account.email})")
             print(f"   Calendar: {flow.target_calendar_id}")
         else:
             print(f"❌ Target: Account {flow.target_account_id} (NOT FOUND)")
@@ -323,12 +323,12 @@ def display_configuration_summary() -> None:
         print(f"\nAccounts ({len(accounts)}):")
         for account in accounts:
             account_id = account.get("account_id", "?")
-            name = account.get("name", "Unknown")
+            email = account.get("email", "Unknown")
             has_client_id = account.get("has_client_id", False)
             has_client_secret = account.get("has_client_secret", False)
             has_refresh_token = account.get("has_refresh_token", False)
             
-            print(f"  {account_id}. {name}")
+            print(f"  {account_id}. {email}")
             print(f"     Client ID: {'✅' if has_client_id else '❌'}")
             print(f"     Client Secret: {'✅' if has_client_secret else '❌'}")
             print(f"     Refresh Token: {'✅' if has_refresh_token else '❌'}")

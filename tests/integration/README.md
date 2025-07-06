@@ -16,13 +16,13 @@ These tests require a complete `.env` file with real credentials:
 
 ```bash
 # Google Calendar Account 1 (Personal)
-GOOGLE_ACCOUNT_1_NAME=your-personal-account-name
+GOOGLE_ACCOUNT_1_EMAIL=your-personal-account@gmail.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your-personal-client-id
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your-personal-client-secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=your-personal-refresh-token
 
 # Google Calendar Account 2 (Work)
-GOOGLE_ACCOUNT_2_NAME=your-work-account-name
+GOOGLE_ACCOUNT_2_EMAIL=your-work-account@company.com
 GOOGLE_ACCOUNT_2_CLIENT_ID=your-work-client-id
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=your-work-client-secret
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=your-work-refresh-token

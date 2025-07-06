@@ -90,13 +90,13 @@ Add each account's configuration to your `.env` file:
 
 ```bash
 # Google Account 1: Personal Gmail
-GOOGLE_ACCOUNT_1_NAME=Personal Gmail
+GOOGLE_ACCOUNT_1_EMAIL=personal@gmail.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret_here
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_refresh_token_for_account_1
 
 # Google Account 2: Work Account
-GOOGLE_ACCOUNT_2_NAME=Work Account
+GOOGLE_ACCOUNT_2_EMAIL=work@company.com
 GOOGLE_ACCOUNT_2_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=your_client_secret_here
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=1//04_refresh_token_for_account_2
@@ -199,12 +199,12 @@ google_client_id = "your_client_id_here.apps.googleusercontent.com"
 google_client_secret = "your_client_secret_here"
 
 # Account configurations
-google_account_1_name = "Personal Gmail"
+google_account_1_email = "personal@gmail.com"
 google_account_1_client_id = "your_client_id_here.apps.googleusercontent.com"
 google_account_1_client_secret = "your_client_secret_here"
 google_account_1_refresh_token = "1//04_refresh_token_for_account_1"
 
-google_account_2_name = "Work Account"
+google_account_2_email = "work@company.com"
 google_account_2_client_id = "your_client_id_here.apps.googleusercontent.com"
 google_account_2_client_secret = "your_client_secret_here"
 google_account_2_refresh_token = "1//04_refresh_token_for_account_2"

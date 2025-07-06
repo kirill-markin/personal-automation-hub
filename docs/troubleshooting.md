@@ -180,7 +180,7 @@ config = load_multi_account_config()
 print(f'Accounts: {len(config.accounts)}')
 print(f'Sync Flows: {len(config.sync_flows)}')
 for account in config.accounts:
-    print(f'Account {account.account_id}: {account.name}')
+    print(f'Account {account.account_id}: {account.email}')
 for flow in config.sync_flows:
     print(f'Flow: {flow.name} ({flow.source_account_id} -> {flow.target_account_id})')
 "
@@ -369,7 +369,7 @@ try:
         try:
             client = account_manager.get_client(account.account_id)
             calendars = client.list_calendars()
-            print(f'  ✓ Account {account.account_id} ({account.name}): {len(calendars)} calendars')
+            print(f'  ✓ Account {account.account_id} ({account.email}): {len(calendars)} calendars')
         except Exception as e:
             print(f'  ✗ Account {account.account_id} error: {e}')
 except Exception as e:

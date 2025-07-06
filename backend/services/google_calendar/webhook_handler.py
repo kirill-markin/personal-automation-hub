@@ -214,7 +214,7 @@ class GoogleCalendarWebhookHandler:
                 monitored.append(MonitoredCalendar(
                     calendar_id=flow.source_calendar_id,
                     account_id=flow.source_account_id,
-                    account_name=account.name,
+                    account_email=account.email,
                     flow_name=flow.name
                 ))
         

@@ -24,13 +24,13 @@ DAILY_SYNC_TIMEZONE=UTC
 
 ```bash
 # Google Account 1: Personal Gmail
-GOOGLE_ACCOUNT_1_NAME=Personal Gmail
+GOOGLE_ACCOUNT_1_EMAIL=personal@gmail.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_personal_refresh_token
 
 # Google Account 2: Work Account
-GOOGLE_ACCOUNT_2_NAME=Work Account
+GOOGLE_ACCOUNT_2_EMAIL=work@company.com
 GOOGLE_ACCOUNT_2_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=1//04_work_refresh_token
@@ -68,7 +68,7 @@ SYNC_FLOW_2_END_OFFSET=15
 
 ```bash
 # Google Account 1: Single account with multiple calendars
-GOOGLE_ACCOUNT_1_NAME=Main Account
+GOOGLE_ACCOUNT_1_EMAIL=main@gmail.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_main_refresh_token
@@ -106,19 +106,19 @@ SYNC_FLOW_2_END_OFFSET=5
 
 ```bash
 # Google Account 1: Team Lead
-GOOGLE_ACCOUNT_1_NAME=Team Lead
+GOOGLE_ACCOUNT_1_EMAIL=teamlead@company.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_lead_refresh_token
 
 # Google Account 2: Team Member 1
-GOOGLE_ACCOUNT_2_NAME=Team Member 1
+GOOGLE_ACCOUNT_2_EMAIL=member1@company.com
 GOOGLE_ACCOUNT_2_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=1//04_member1_refresh_token
 
 # Google Account 3: Team Member 2
-GOOGLE_ACCOUNT_3_NAME=Team Member 2
+GOOGLE_ACCOUNT_3_EMAIL=member2@company.com
 GOOGLE_ACCOUNT_3_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_3_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_3_REFRESH_TOKEN=1//04_member2_refresh_token
@@ -174,7 +174,7 @@ SYNC_FLOW_4_END_OFFSET=15
 
 ```bash
 # Google Account 1: Main business account
-GOOGLE_ACCOUNT_1_NAME=Business Main
+GOOGLE_ACCOUNT_1_EMAIL=main@business.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_business_refresh_token
@@ -225,13 +225,13 @@ DAILY_SYNC_HOUR=9  # 9:00 AM
 DAILY_SYNC_TIMEZONE=America/New_York  # Eastern Time
 
 # Google Account 1: US East Coast
-GOOGLE_ACCOUNT_1_NAME=US East
+GOOGLE_ACCOUNT_1_EMAIL=useast@company.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_us_east_refresh_token
 
 # Google Account 2: US West Coast
-GOOGLE_ACCOUNT_2_NAME=US West
+GOOGLE_ACCOUNT_2_EMAIL=uswest@company.com
 GOOGLE_ACCOUNT_2_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=1//04_us_west_refresh_token

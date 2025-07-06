@@ -252,10 +252,10 @@ async def list_sync_flows(
             sync_flows.append({  # type: ignore
                 'name': flow.name,  # type: ignore
                 'source_account_id': flow.source_account_id,  # type: ignore
-                'source_account_name': source_account.name if source_account else 'Unknown',  # type: ignore
+                'source_account_email': source_account.email if source_account else 'Unknown',  # type: ignore
                 'source_calendar_id': flow.source_calendar_id,  # type: ignore
                 'target_account_id': flow.target_account_id,  # type: ignore
-                'target_account_name': target_account.name if target_account else 'Unknown',  # type: ignore
+                'target_account_email': target_account.email if target_account else 'Unknown',  # type: ignore
                 'target_calendar_id': flow.target_calendar_id,  # type: ignore
                 'start_offset': flow.start_offset,  # type: ignore
                 'end_offset': flow.end_offset  # type: ignore

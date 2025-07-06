@@ -168,7 +168,7 @@ def test_sync_status_endpoint():
     for calendar in monitored_calendars:  # type: ignore
         assert "calendar_id" in calendar, "Calendar should have calendar_id"
         assert "account_id" in calendar, "Calendar should have account_id"
-        assert "account_name" in calendar, "Calendar should have account_name"
+        assert "account_email" in calendar, "Calendar should have account_email"
         assert "flow_name" in calendar, "Calendar should have flow_name"
     
     logger.info("Sync status endpoint test passed successfully")
@@ -195,10 +195,10 @@ def test_accounts_endpoint():
     
     for account in accounts:  # type: ignore
         assert "account_id" in account, "Account should have account_id"
-        assert "name" in account, "Account should have name"
-        assert "connected" in account, "Account should have connected status"
+        assert "email" in account, "Account should have email"
+        assert "connection_ok" in account, "Account should have connection_ok status"
         assert isinstance(account["account_id"], int), "Account ID should be an integer"
-        assert isinstance(account["connected"], bool), "Connected should be boolean"
+        assert isinstance(account["connection_ok"], bool), "Connected should be boolean"
     
     logger.info(f"Accounts endpoint test passed successfully - found {len(accounts)} accounts")  # type: ignore
 
@@ -222,9 +222,9 @@ def test_sync_flows_endpoint():
     assert result["total_flows"] == len(sync_flows), "Total flows should match list length"  # type: ignore
     
     for flow in sync_flows:  # type: ignore
-        required_fields = ["name", "source_account_id", "source_account_name", 
-                          "source_calendar_id", "target_account_id", "target_account_name",
-                          "target_calendar_id", "start_offset", "end_offset"]
+        required_fields = ["name", "source_account_id", "source_account_email",
+                           "source_calendar_id", "target_account_id", "target_account_email",
+                           "target_calendar_id", "start_offset", "end_offset"]
         for field in required_fields:
             assert field in flow, f"Sync flow should have {field}"
         
@@ -247,7 +247,7 @@ def test_calendar_listing_endpoint():
     
     for account in accounts:
         account_id = account["account_id"]
-        account_name = account["name"]
+        account_email = account["email"]
         
         # Test calendar listing for this account
         result = helper.make_request("GET", f"/api/v1/webhooks/google-calendar/accounts/{account_id}/calendars")
@@ -266,11 +266,11 @@ def test_calendar_listing_endpoint():
         
         if len(calendars) > 0:  # type: ignore
             for calendar in calendars[:3]:  # Check first 3 calendars  # type: ignore
-                assert "calendar_id" in calendar, "Calendar should have calendar_id"
-                assert "name" in calendar, "Calendar should have name"
+                assert "id" in calendar, "Calendar should have id"
+                assert "summary" in calendar, "Calendar should have summary"
                 assert "access_role" in calendar, "Calendar should have access_role"
         
-        logger.info(f"Calendar listing test passed for account {account_id} ({account_name}) - found {len(calendars)} calendars")  # type: ignore
+        logger.info(f"Calendar listing test passed for account {account_id} ({account_email}) - found {len(calendars)} calendars")  # type: ignore
 
 
 @pytest.mark.integration

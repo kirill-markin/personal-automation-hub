@@ -107,13 +107,13 @@ Integration tests require a `.env` file with real Google API credentials:
 
 ```bash
 # Google Calendar Account 1 (Personal)
-GOOGLE_ACCOUNT_1_NAME=your-personal-account
+GOOGLE_ACCOUNT_1_EMAIL=your-personal-account@gmail.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your-client-id
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your-client-secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=your-refresh-token
 
 # Google Calendar Account 2 (Work)
-GOOGLE_ACCOUNT_2_NAME=your-work-account
+GOOGLE_ACCOUNT_2_EMAIL=your-work-account@company.com
 GOOGLE_ACCOUNT_2_CLIENT_ID=your-work-client-id
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=your-work-client-secret
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=your-work-refresh-token

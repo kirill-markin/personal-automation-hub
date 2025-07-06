@@ -62,12 +62,12 @@ GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret
 
 # Account Configuration (repeat for each account)
-GOOGLE_ACCOUNT_1_NAME=Personal Gmail
+GOOGLE_ACCOUNT_1_EMAIL=personal@gmail.com
 GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_your_refresh_token_here
 
-GOOGLE_ACCOUNT_2_NAME=Work Account
+GOOGLE_ACCOUNT_2_EMAIL=work@company.com
 GOOGLE_ACCOUNT_2_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=your_client_secret
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=1//04_your_work_refresh_token

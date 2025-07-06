@@ -55,7 +55,7 @@ GOOGLE_CLIENT_SECRET=your_client_secret
 #### Account Configuration
 ```bash
 # Account N configuration
-GOOGLE_ACCOUNT_N_NAME=Account Display Name
+GOOGLE_ACCOUNT_N_EMAIL=account@gmail.com
 GOOGLE_ACCOUNT_N_CLIENT_ID=client_id_for_account_n
 GOOGLE_ACCOUNT_N_CLIENT_SECRET=client_secret_for_account_n
 GOOGLE_ACCOUNT_N_REFRESH_TOKEN=refresh_token_for_account_n

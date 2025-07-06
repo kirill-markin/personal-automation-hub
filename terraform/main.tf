@@ -180,13 +180,13 @@ MAX_GOOGLE_ACCOUNTS=${var.max_google_accounts}
 MAX_SYNC_FLOWS=${var.max_sync_flows}
 
 # Google Account 1 Configuration
-GOOGLE_ACCOUNT_1_NAME=${var.google_account_1_name != null ? var.google_account_1_name : ""}
+      GOOGLE_ACCOUNT_1_EMAIL=${var.google_account_1_email != null ? var.google_account_1_email : ""}
 GOOGLE_ACCOUNT_1_CLIENT_ID=${var.google_account_1_client_id != null ? var.google_account_1_client_id : ""}
 GOOGLE_ACCOUNT_1_CLIENT_SECRET=${var.google_account_1_client_secret != null ? var.google_account_1_client_secret : ""}
 GOOGLE_ACCOUNT_1_REFRESH_TOKEN=${var.google_account_1_refresh_token != null ? var.google_account_1_refresh_token : ""}
 
 # Google Account 2 Configuration
-GOOGLE_ACCOUNT_2_NAME=${var.google_account_2_name != null ? var.google_account_2_name : ""}
+      GOOGLE_ACCOUNT_2_EMAIL=${var.google_account_2_email != null ? var.google_account_2_email : ""}
 GOOGLE_ACCOUNT_2_CLIENT_ID=${var.google_account_2_client_id != null ? var.google_account_2_client_id : ""}
 GOOGLE_ACCOUNT_2_CLIENT_SECRET=${var.google_account_2_client_secret != null ? var.google_account_2_client_secret : ""}
 GOOGLE_ACCOUNT_2_REFRESH_TOKEN=${var.google_account_2_refresh_token != null ? var.google_account_2_refresh_token : ""}

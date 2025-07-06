@@ -24,6 +24,10 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(override=True)
 
 # Add the project root to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -146,16 +150,16 @@ def save_refresh_token(account_id: int, refresh_token: str) -> None:
     print(f"\n{'='*60}")
 
 
-def get_account_name(account_id: int) -> Optional[str]:
-    """Get account name from environment if available.
+def get_account_email(account_id: int) -> Optional[str]:
+    """Get account email from environment if available.
     
     Args:
         account_id: Account ID
         
     Returns:
-        Account name or None if not set
+        Account email or None if not set
     """
-    return os.environ.get(f"GOOGLE_ACCOUNT_{account_id}_NAME")
+    return os.environ.get(f"GOOGLE_ACCOUNT_{account_id}_EMAIL")
 
 
 def main() -> None:
@@ -164,7 +168,6 @@ def main() -> None:
     parser.add_argument(
         "--account-id",
         type=int,
-        required=True,
         help="Account ID (1, 2, 3, etc.) - determines which account to set up"
     )
     parser.add_argument(
@@ -179,6 +182,11 @@ def main() -> None:
         list_configured_accounts()
         return
     
+    if args.account_id is None:
+        logger.error("Account ID is required when not using --list-accounts")
+        parser.print_help()
+        sys.exit(1)
+    
     account_id = args.account_id
     
     if account_id <= 0:
@@ -186,12 +194,12 @@ def main() -> None:
         sys.exit(1)
     
     # Show account information
-    account_name = get_account_name(account_id)
-    if account_name:
-        logger.info(f"Setting up OAuth2 for account {account_id}: {account_name}")
+    account_email = get_account_email(account_id)
+    if account_email:
+        logger.info(f"Setting up OAuth2 for account {account_id}: {account_email}")
     else:
         logger.info(f"Setting up OAuth2 for account {account_id}")
-        logger.info(f"Consider setting GOOGLE_ACCOUNT_{account_id}_NAME for better identification")
+        logger.info(f"Consider setting GOOGLE_ACCOUNT_{account_id}_EMAIL for better identification")
     
     try:
         # Set up OAuth2 and get refresh token
@@ -222,23 +230,23 @@ def list_configured_accounts() -> None:
     account_id = 1
     
     while True:
-        name_key = f"GOOGLE_ACCOUNT_{account_id}_NAME"
+        email_key = f"GOOGLE_ACCOUNT_{account_id}_EMAIL"
         client_id_key = f"GOOGLE_ACCOUNT_{account_id}_CLIENT_ID"
         client_secret_key = f"GOOGLE_ACCOUNT_{account_id}_CLIENT_SECRET"
         refresh_token_key = f"GOOGLE_ACCOUNT_{account_id}_REFRESH_TOKEN"
         
         # Check if account exists
-        if name_key not in os.environ:
+        if email_key not in os.environ:
             break
         
         found_accounts = True
-        name = os.environ.get(name_key, "")
+        email = os.environ.get(email_key, "")
         has_client_id = bool(os.environ.get(client_id_key, ""))
         has_client_secret = bool(os.environ.get(client_secret_key, ""))
         has_refresh_token = bool(os.environ.get(refresh_token_key, ""))
         
         print(f"\nAccount {account_id}:")
-        print(f"  Name: {name}")
+        print(f"  Email: {email}")
         print(f"  Client ID: {'✅' if has_client_id else '❌'}")
         print(f"  Client Secret: {'✅' if has_client_secret else '❌'}")
         print(f"  Refresh Token: {'✅' if has_refresh_token else '❌'}")

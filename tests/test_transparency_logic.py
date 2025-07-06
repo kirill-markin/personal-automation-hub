@@ -33,7 +33,7 @@ class TestTransparencyLogic:
         # Create test accounts
         self.account1 = GoogleAccount(
             account_id=1,
-            name="Test Account 1",
+            email="test1@example.com",
             client_id="test_client_1",
             client_secret="test_secret_1", 
             refresh_token="test_token_1"
@@ -41,7 +41,7 @@ class TestTransparencyLogic:
         
         self.account2 = GoogleAccount(
             account_id=2,
-            name="Test Account 2",
+            email="test2@example.com",
             client_id="test_client_2",
             client_secret="test_secret_2",
             refresh_token="test_token_2"

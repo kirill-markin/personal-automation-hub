@@ -123,8 +123,8 @@ variable "max_sync_flows" {
 }
 
 # Google Account 1 Configuration
-variable "google_account_1_name" {
-  description = "Name for Google account 1"
+variable "google_account_1_email" {
+  description = "Email for Google account 1"
   type        = string
   default     = null
 }
@@ -151,8 +151,8 @@ variable "google_account_1_refresh_token" {
 }
 
 # Google Account 2 Configuration
-variable "google_account_2_name" {
-  description = "Name for Google account 2"
+variable "google_account_2_email" {
+  description = "Email for Google account 2"
   type        = string
   default     = null
 }

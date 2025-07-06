@@ -89,7 +89,7 @@ class AccountManager:
             
             # Cache the client
             self._clients[account_id] = client
-            logger.info(f"Created and cached client for account {account_id} ({account.name})")
+            logger.info(f"Created and cached client for account {account_id} ({account.email})")
             
             return client
             
@@ -164,11 +164,11 @@ class AccountManager:
             
             # Add account info to each calendar
             account = self.get_account(account_id)
-            account_name = account.name if account else 'Unknown'
+            account_email = account.email if account else 'Unknown'
             
             for calendar in calendars:
                 calendar['account_id'] = account_id
-                calendar['account_name'] = account_name
+                calendar['account_email'] = account_email
             
             return calendars
             
@@ -189,7 +189,7 @@ class AccountManager:
             try:
                 calendars = self.list_calendars_for_account(account.account_id)
                 all_calendars[account.account_id] = calendars
-                logger.info(f"Listed {len(calendars)} calendars for account {account.account_id} ({account.name})")
+                logger.info(f"Listed {len(calendars)} calendars for account {account.account_id} ({account.email})")
             except Exception as e:
                 logger.error(f"Failed to list calendars for account {account.account_id}: {e}")
                 all_calendars[account.account_id] = []
@@ -220,7 +220,7 @@ class AccountManager:
                 
                 summary = {
                     'account_id': account.account_id,
-                    'name': account.name,
+                    'email': account.email,
                     'connection_ok': connection_ok,
                     'calendar_count': calendar_count,
                     'client_cached': account.account_id in self._clients
@@ -232,7 +232,7 @@ class AccountManager:
                 logger.error(f"Error creating summary for account {account.account_id}: {e}")
                 summaries.append({
                     'account_id': account.account_id,
-                    'name': account.name,
+                    'email': account.email,
                     'connection_ok': False,
                     'calendar_count': 0,
                     'client_cached': False,

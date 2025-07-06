@@ -27,7 +27,7 @@ def load_google_accounts_from_env() -> List[GoogleAccount]:
     """Load Google accounts from environment variables.
     
     Expected environment variables:
-    - GOOGLE_ACCOUNT_N_NAME: Human-readable name for account N
+    - GOOGLE_ACCOUNT_N_EMAIL: Email address for account N
     - GOOGLE_ACCOUNT_N_CLIENT_ID: OAuth2 client ID for account N
     - GOOGLE_ACCOUNT_N_CLIENT_SECRET: OAuth2 client secret for account N
     - GOOGLE_ACCOUNT_N_REFRESH_TOKEN: OAuth2 refresh token for account N
@@ -45,18 +45,18 @@ def load_google_accounts_from_env() -> List[GoogleAccount]:
     
     while True:
         # Check for account configuration
-        name_key = f"GOOGLE_ACCOUNT_{account_id}_NAME"
+        email_key = f"GOOGLE_ACCOUNT_{account_id}_EMAIL"
         client_id_key = f"GOOGLE_ACCOUNT_{account_id}_CLIENT_ID"
         client_secret_key = f"GOOGLE_ACCOUNT_{account_id}_CLIENT_SECRET"
         refresh_token_key = f"GOOGLE_ACCOUNT_{account_id}_REFRESH_TOKEN"
         
         # If the first key doesn't exist, stop looking
-        if name_key not in os.environ:
+        if email_key not in os.environ:
             break
         
         # Validate all required keys exist
         missing_keys: List[str] = []
-        for key in [name_key, client_id_key, client_secret_key, refresh_token_key]:
+        for key in [email_key, client_id_key, client_secret_key, refresh_token_key]:
             if key not in os.environ or not os.environ[key].strip():
                 missing_keys.append(key)
         
@@ -66,14 +66,14 @@ def load_google_accounts_from_env() -> List[GoogleAccount]:
         # Create account
         account = GoogleAccount(
             account_id=account_id,
-            name=os.environ[name_key].strip(),
+            email=os.environ[email_key].strip(),
             client_id=os.environ[client_id_key].strip(),
             client_secret=os.environ[client_secret_key].strip(),
             refresh_token=os.environ[refresh_token_key].strip()
         )
         
         accounts.append(account)
-        logger.info(f"Loaded account {account_id}: {account.name}")
+        logger.info(f"Loaded account {account_id}: {account.email}")
         
         account_id += 1
     
@@ -260,13 +260,13 @@ def get_configuration_summary() -> Dict[str, Any]:
     # Check accounts
     account_id = 1
     while True:
-        name_key = f"GOOGLE_ACCOUNT_{account_id}_NAME"
-        if name_key not in os.environ:
+        email_key = f"GOOGLE_ACCOUNT_{account_id}_EMAIL"
+        if email_key not in os.environ:
             break
         
         account_info = {
             "account_id": account_id,
-            "name": os.environ.get(name_key, ""),
+            "email": os.environ.get(email_key, ""),
             "has_client_id": bool(os.environ.get(f"GOOGLE_ACCOUNT_{account_id}_CLIENT_ID", "")),
             "has_client_secret": bool(os.environ.get(f"GOOGLE_ACCOUNT_{account_id}_CLIENT_SECRET", "")),
             "has_refresh_token": bool(os.environ.get(f"GOOGLE_ACCOUNT_{account_id}_REFRESH_TOKEN", ""))
