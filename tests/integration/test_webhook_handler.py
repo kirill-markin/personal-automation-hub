@@ -27,7 +27,6 @@ from datetime import datetime, timedelta
 import pytest
 from dotenv import load_dotenv
 import uuid
-import json
 
 # Load environment variables from .env file
 load_dotenv(override=True)
@@ -42,8 +41,6 @@ from backend.services.google_calendar.webhook_handler import GoogleCalendarWebho
 from backend.models.calendar import (
     MultiAccountConfig,
     WebhookProcessingResult,
-    WebhookValidationResult,
-    WebhookHeaders,
     MonitoredCalendar,
     ChannelSubscriptionResult
 )
@@ -174,9 +171,12 @@ def test_webhook_data_validation():
         pytest.skip("No sync flows configured")
     
     test_calendar_id = helper.get_test_calendar_id()
-    valid_data = helper.create_mock_webhook_data(test_calendar_id, "sync")
+    if test_calendar_id is None:
+        pytest.skip("No test calendar ID available")
     
-    assert webhook_handler._validate_webhook_data(valid_data) == True
+    valid_data = helper.create_mock_webhook_data(test_calendar_id, "sync")  # type: ignore
+    
+    assert webhook_handler._validate_webhook_data(valid_data) == True  # type: ignore
     
     # Test invalid webhook data - missing required fields
     invalid_data_missing_resource = {
@@ -185,7 +185,7 @@ def test_webhook_data_validation():
         # Missing resourceId
     }
     
-    assert webhook_handler._validate_webhook_data(invalid_data_missing_resource) == False
+    assert webhook_handler._validate_webhook_data(invalid_data_missing_resource) == False  # type: ignore
     
     invalid_data_missing_channel = {
         "resourceId": test_calendar_id,
@@ -193,7 +193,7 @@ def test_webhook_data_validation():
         # Missing channelId
     }
     
-    assert webhook_handler._validate_webhook_data(invalid_data_missing_channel) == False
+    assert webhook_handler._validate_webhook_data(invalid_data_missing_channel) == False  # type: ignore
     
     invalid_data_missing_state = {
         "resourceId": test_calendar_id,
@@ -201,7 +201,7 @@ def test_webhook_data_validation():
         # Missing resourceState
     }
     
-    assert webhook_handler._validate_webhook_data(invalid_data_missing_state) == False
+    assert webhook_handler._validate_webhook_data(invalid_data_missing_state) == False  # type: ignore
     
     # Test empty values
     invalid_data_empty_values = {
@@ -210,7 +210,7 @@ def test_webhook_data_validation():
         "resourceState": "sync"
     }
     
-    assert webhook_handler._validate_webhook_data(invalid_data_empty_values) == False
+    assert webhook_handler._validate_webhook_data(invalid_data_empty_values) == False  # type: ignore
     
     logger.info("Webhook data validation tests completed successfully")
 
@@ -228,9 +228,11 @@ def test_webhook_header_validation():
         pytest.skip("No sync flows configured")
     
     test_calendar_id = helper.get_test_calendar_id()
+    if test_calendar_id is None:
+        pytest.skip("No test calendar ID available")
     
     # Test valid webhook headers
-    valid_headers = helper.create_mock_webhook_headers(test_calendar_id, "sync")
+    valid_headers = helper.create_mock_webhook_headers(test_calendar_id, "sync")  # type: ignore
     
     validation_result = webhook_handler.validate_webhook_signature(valid_headers)
     
@@ -247,10 +249,10 @@ def test_webhook_header_validation():
         # Missing X-Goog-Channel-Id
     }
     
-    validation_result = webhook_handler.validate_webhook_signature(invalid_headers_missing_channel)
+    validation_result = webhook_handler.validate_webhook_signature(invalid_headers_missing_channel)  # type: ignore
     
     assert validation_result.is_valid == False
-    assert "Missing X-Goog-Channel-Id" in validation_result.reason
+    assert validation_result.reason is not None and "Missing X-Goog-Channel-Id" in validation_result.reason
     
     # Test invalid resource state
     invalid_headers_bad_state = {
@@ -259,10 +261,10 @@ def test_webhook_header_validation():
         "X-Goog-Resource-State": "invalid_state"
     }
     
-    validation_result = webhook_handler.validate_webhook_signature(invalid_headers_bad_state)
+    validation_result = webhook_handler.validate_webhook_signature(invalid_headers_bad_state)  # type: ignore
     
     assert validation_result.is_valid == False
-    assert "Invalid resource state" in validation_result.reason
+    assert validation_result.reason is not None and "Invalid resource state" in validation_result.reason
     
     # Test non-monitored calendar
     non_monitored_calendar = "non-monitored-calendar@example.com"
@@ -275,7 +277,7 @@ def test_webhook_header_validation():
     validation_result = webhook_handler.validate_webhook_signature(invalid_headers_non_monitored)
     
     assert validation_result.is_valid == False
-    assert "non-monitored calendar" in validation_result.reason
+    assert validation_result.reason is not None and "non-monitored calendar" in validation_result.reason
     
     logger.info("Webhook header validation tests completed successfully")
 
@@ -293,9 +295,11 @@ def test_webhook_processing_sync_state():
         pytest.skip("No sync flows configured")
     
     test_calendar_id = helper.get_test_calendar_id()
+    if test_calendar_id is None:
+        pytest.skip("No test calendar ID available")
     
     # Create mock webhook data for sync state
-    webhook_data = helper.create_mock_webhook_data(test_calendar_id, "sync")
+    webhook_data = helper.create_mock_webhook_data(test_calendar_id, "sync")  # type: ignore
     
     # Process webhook
     result = webhook_handler.handle_webhook(webhook_data)
@@ -326,9 +330,11 @@ def test_webhook_processing_exists_state():
         pytest.skip("No sync flows configured")
     
     test_calendar_id = helper.get_test_calendar_id()
+    if test_calendar_id is None:
+        pytest.skip("No test calendar ID available")
     
     # Create mock webhook data for exists state
-    webhook_data = helper.create_mock_webhook_data(test_calendar_id, "exists")
+    webhook_data = helper.create_mock_webhook_data(test_calendar_id, "exists")  # type: ignore
     
     # Process webhook
     result = webhook_handler.handle_webhook(webhook_data)
@@ -446,13 +452,13 @@ def test_find_account_for_calendar():
     
     # Test with known calendar
     flow = config.sync_flows[0]
-    account_id = webhook_handler._find_account_for_calendar(flow.source_calendar_id)
+    account_id = webhook_handler._find_account_for_calendar(flow.source_calendar_id)  # type: ignore
     
     assert account_id == flow.source_account_id
     
     # Test with unknown calendar
     unknown_calendar = "unknown-calendar@example.com"
-    account_id = webhook_handler._find_account_for_calendar(unknown_calendar)
+    account_id = webhook_handler._find_account_for_calendar(unknown_calendar)  # type: ignore
     
     assert account_id is None
     
@@ -525,7 +531,7 @@ def test_webhook_subscription_deletion():
     account_manager = AccountManager(config)
     sync_engine = CalendarSyncEngine(config, account_manager)
     webhook_handler = GoogleCalendarWebhookHandler(config, account_manager, sync_engine)
-    helper = WebhookTestHelper(config, account_manager, sync_engine, webhook_handler)
+    _ = WebhookTestHelper(config, account_manager, sync_engine, webhook_handler)
     
     if not config.sync_flows:
         pytest.skip("No sync flows configured")
