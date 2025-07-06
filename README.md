@@ -4,9 +4,19 @@ A personal automation hub for integrating various services.
 
 ## Features
 
+### Notion Integration
 - Notion webhook integration for creating tasks via HTTP requests
   - Support for task title (required)
   - Support for task body content (optional)
+
+### Google Calendar Synchronization
+- Automatic "Busy" block creation across multiple calendars
+- Real-time sync via Google Calendar webhooks
+- Daily backup sync via polling
+- Multi-account support (personal + work calendars)
+- Configurable time offsets for busy blocks
+- Event filtering (2+ participants required)
+- Idempotent operations (duplicate-safe)
 
 ## Setup
 
@@ -38,10 +48,49 @@ Both files contain the same environment variables, but with different values:
 
 In your `.env` file, configure the following variables:
 
+#### Notion Integration
 ```
 NOTION_API_KEY=secret_your_notion_api_key
 NOTION_DATABASE_ID=your_notion_database_id
 WEBHOOK_API_KEY=your_secure_api_key
+```
+
+#### Google Calendar Synchronization
+```
+# OAuth2 Credentials
+GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_client_secret
+
+# Account Configuration (repeat for each account)
+GOOGLE_ACCOUNT_1_NAME=Personal Gmail
+GOOGLE_ACCOUNT_1_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_ACCOUNT_1_CLIENT_SECRET=your_client_secret
+GOOGLE_ACCOUNT_1_REFRESH_TOKEN=1//04_your_refresh_token_here
+
+GOOGLE_ACCOUNT_2_NAME=Work Account
+GOOGLE_ACCOUNT_2_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_ACCOUNT_2_CLIENT_SECRET=your_client_secret
+GOOGLE_ACCOUNT_2_REFRESH_TOKEN=1//04_your_work_refresh_token
+
+# Sync Flow Configuration
+DAILY_SYNC_HOUR=6
+DAILY_SYNC_TIMEZONE=UTC
+
+SYNC_FLOW_1_NAME=Work to Personal
+SYNC_FLOW_1_SOURCE_ACCOUNT_ID=2
+SYNC_FLOW_1_SOURCE_CALENDAR_ID=work.email@company.com
+SYNC_FLOW_1_TARGET_ACCOUNT_ID=1
+SYNC_FLOW_1_TARGET_CALENDAR_ID=personal.email@gmail.com
+SYNC_FLOW_1_START_OFFSET=-15
+SYNC_FLOW_1_END_OFFSET=15
+
+SYNC_FLOW_2_NAME=Personal to Work
+SYNC_FLOW_2_SOURCE_ACCOUNT_ID=1
+SYNC_FLOW_2_SOURCE_CALENDAR_ID=personal.email@gmail.com
+SYNC_FLOW_2_TARGET_ACCOUNT_ID=2
+SYNC_FLOW_2_TARGET_CALENDAR_ID=work.email@company.com
+SYNC_FLOW_2_START_OFFSET=-15
+SYNC_FLOW_2_END_OFFSET=15
 ```
 
 ### Production Configuration (terraform.tfvars)
@@ -180,3 +229,43 @@ curl -X POST "$WEBHOOK_URL" \
     -H "Content-Type: application/json" \
     -d '{"title": "Production test with content", "body": "This is a test task with body content to verify the API is working correctly."}'
 ```
+
+## Google Calendar Setup
+
+For detailed Google Calendar synchronization setup:
+
+1. **[Google Calendar Setup Guide](docs/google_calendar_setup.md)** - Complete setup instructions
+2. **[Configuration Examples](docs/configuration_examples.md)** - Common sync scenarios
+3. **[API Documentation](docs/calendar_sync.md)** - Technical details
+4. **[Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and solutions
+
+### Quick Start for Google Calendar
+
+1. **Setup OAuth2 credentials** in Google Cloud Console
+2. **Obtain refresh tokens** for each account:
+   ```bash
+   python scripts/setup_google_oauth.py --account-id 1
+   python scripts/setup_google_oauth.py --account-id 2
+   ```
+3. **Configure sync flows** in `.env` file
+4. **Test the setup**:
+   ```bash
+   python -m pytest tests/integration/test_calendar_access.py -m integration -v
+   ```
+5. **Start the server**: `python run.py`
+
+### Google Calendar Features
+
+- **Event Filtering**: Only events with 2+ participants are synced
+- **Time Offsets**: Configurable minutes before/after event for busy blocks
+- **Real-time Sync**: Webhooks provide immediate synchronization
+- **Backup Sync**: Daily polling catches any missed events
+- **Multi-Account**: Support for unlimited Google accounts
+- **Idempotent**: Safe to run multiple times without duplicates
+
+### Example Sync Scenarios
+
+- **Work-Life Balance**: Sync work calendar to personal (and vice versa)
+- **Team Coordination**: Share availability across team members
+- **Client Management**: Different buffer times for different client types
+- **Multiple Views**: One calendar syncing to multiple target calendars
