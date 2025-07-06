@@ -56,10 +56,11 @@
 **Symptoms**: API calls fail with 403 permission denied
 
 **Solutions**:
-1. **Calendar API Enabled**: Ensure Google Calendar API is enabled in Google Cloud Console
-2. **Scope Verification**: Verify you granted calendar access during OAuth setup
+1. **APIs Enabled**: Ensure Google Calendar API and Gmail API are enabled in Google Cloud Console
+2. **Scope Verification**: Verify you granted both calendar and Gmail access during OAuth setup
 3. **Calendar Permissions**: Check permissions on the specific calendar
 4. **Account Verification**: Ensure you're using the correct Google account
+5. **OAuth Scopes**: If you previously set up OAuth with only calendar scopes, re-run the setup script to get Gmail permissions
 
 ### Sync Flow Configuration Issues
 

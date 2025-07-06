@@ -275,23 +275,24 @@ terraform apply
 
 **Note:** Changes must be pushed to GitHub before deployment - EC2 instance pulls code from the repository.
 
-## Google Calendar Setup
+## Google Calendar & Gmail Setup
 
-For detailed Google Calendar synchronization setup:
+For detailed Google Calendar synchronization and Gmail automation setup:
 
-1. **[Google Calendar Setup Guide](docs/google_calendar_setup.md)** - Complete setup instructions
+1. **[Google Calendar Setup Guide](docs/google_calendar_setup.md)** - Complete setup instructions (includes Gmail OAuth)
 2. **[Configuration Examples](docs/configuration_examples.md)** - Common sync scenarios
 3. **[API Documentation](docs/calendar_sync.md)** - Technical details
 4. **[Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and solutions
 
-### Quick Start for Google Calendar
+### Quick Start for Google Calendar & Gmail
 
-1. **Setup OAuth2 credentials** in Google Cloud Console
+1. **Setup OAuth2 credentials** in Google Cloud Console (enable both Calendar and Gmail APIs)
 2. **Obtain refresh tokens** for each account:
    ```bash
    python scripts/setup_google_oauth.py --account-id 1
    python scripts/setup_google_oauth.py --account-id 2
    ```
+   **Note**: The script will now request both Calendar and Gmail permissions.
 3. **Configure sync flows** in `.env` file
 4. **Test the setup**:
    ```bash

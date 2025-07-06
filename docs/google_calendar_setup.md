@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide walks you through setting up Google Calendar synchronization in the Personal Automation Hub. The system automatically creates "Busy" blocks in target calendars when events with 2+ participants are created in source calendars.
+This guide walks you through setting up Google Calendar synchronization and Gmail automation in the Personal Automation Hub. The system automatically creates "Busy" blocks in target calendars when events with 2+ participants are created in source calendars, and provides Gmail automation capabilities for email processing.
 
 ## Prerequisites
 
@@ -19,11 +19,13 @@ This guide walks you through setting up Google Calendar synchronization in the P
 3. Give your project a name (e.g., "Personal Calendar Sync")
 4. Click "Create"
 
-### 1.2 Enable Google Calendar API
+### 1.2 Enable Required APIs
 
 1. In the Google Cloud Console, navigate to "APIs & Services" → "Library"
-2. Search for "Google Calendar API"
-3. Click on "Google Calendar API" and click "Enable"
+2. Search for and enable the following APIs:
+   - **Google Calendar API** (for calendar synchronization)
+   - **Gmail API** (for email automation)
+3. Click on each API and click "Enable"
 
 ### 1.3 Create OAuth2 Credentials
 
@@ -33,9 +35,13 @@ This guide walks you through setting up Google Calendar synchronization in the P
    - Choose "External" (unless you have a Google Workspace)
    - Fill in required fields (App name, User support email, Developer contact)
    - Add your email to "Test users" if using External type
+   - **Important**: Add the following scopes to the consent screen:
+     - `https://www.googleapis.com/auth/calendar` (Calendar read/write)
+     - `https://www.googleapis.com/auth/calendar.events` (Calendar events)
+     - `https://www.googleapis.com/auth/gmail.modify` (Gmail read/write)
 4. For OAuth 2.0 Client ID:
    - Application type: "Desktop application"
-   - Name: "Personal Calendar Sync"
+   - Name: "Personal Automation Hub"
    - Click "Create"
 5. Download the credentials JSON file or copy the Client ID and Client Secret
 
@@ -80,9 +86,13 @@ python scripts/setup_google_oauth.py --account-id 3
 
 1. The script will open your browser to Google's OAuth2 consent screen
 2. Select the Google account you want to authorize
-3. Grant permission for calendar access
+3. Grant permissions for:
+   - **Calendar access** (for calendar synchronization)
+   - **Gmail access** (for email automation features)
 4. The script will display your refresh token
 5. Copy the refresh token to your `.env` file
+
+**Note**: If you previously set up OAuth with only calendar scopes, you'll need to re-run the setup script for all accounts to get the new Gmail permissions.
 
 ### 3.3 Add Account Configuration
 
