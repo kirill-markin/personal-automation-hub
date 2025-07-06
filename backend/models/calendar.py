@@ -10,7 +10,7 @@ This module defines:
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -197,6 +197,167 @@ class SyncFlowStatus(BaseModel):
     busy_blocks_created: int = Field(default=0, description="Number of busy blocks created")
     busy_blocks_deleted: int = Field(default=0, description="Number of busy blocks deleted")
     is_active: bool = Field(default=True, description="Whether the flow is active")
+
+
+class EventProcessingResult(BaseModel):
+    """Result of processing a single event through a sync flow."""
+    
+    flow_name: str = Field(..., description="Name of the sync flow")
+    event_id: str = Field(..., description="ID of the processed event")
+    event_title: str = Field(..., description="Title of the processed event")
+    sync_type: str = Field(..., description="Type of sync operation (webhook, polling, manual)")
+    success: bool = Field(..., description="Whether processing was successful")
+    action: str = Field(..., description="Action taken (created, deleted, skipped, existed)")
+    error: Optional[str] = Field(None, description="Error message if processing failed")
+    reason: Optional[str] = Field(None, description="Reason for action taken")
+
+
+class CalendarSyncResult(BaseModel):
+    """Result of syncing a single calendar."""
+    
+    calendar_id: str = Field(..., description="Calendar ID that was synced")
+    account_id: int = Field(..., description="Account ID for the calendar")
+    start_date: str = Field(..., description="Start date of sync range (ISO format)")
+    end_date: str = Field(..., description="End date of sync range (ISO format)")
+    sync_type: str = Field(..., description="Type of sync operation")
+    events_found: int = Field(..., description="Number of events found")
+    events_processed: int = Field(..., description="Number of events processed")
+    results: List[EventProcessingResult] = Field(default_factory=list, description="Individual event processing results")
+    error: Optional[str] = Field(None, description="Error message if sync failed")
+
+
+class CompleteSyncResult(BaseModel):
+    """Result of syncing all source calendars."""
+    
+    start_date: str = Field(..., description="Start date of sync range (ISO format)")
+    end_date: str = Field(..., description="End date of sync range (ISO format)")
+    sync_type: str = Field(..., description="Type of sync operation")
+    calendars_synced: int = Field(..., description="Number of calendars synced")
+    total_events_found: int = Field(..., description="Total events found across all calendars")
+    total_events_processed: int = Field(..., description="Total events processed across all calendars")
+    calendar_results: List[CalendarSyncResult] = Field(default_factory=list, description="Results for each calendar")
+    sync_duration_seconds: Optional[float] = Field(None, description="Duration of sync operation in seconds")
+    sync_start_time: Optional[str] = Field(None, description="Start time of sync operation (ISO format)")
+
+
+class SyncEngineStats(BaseModel):
+    """Statistics for the sync engine."""
+    
+    events_processed: int = Field(..., description="Total events processed")
+    busy_blocks_created: int = Field(..., description="Total busy blocks created")
+    busy_blocks_deleted: int = Field(..., description="Total busy blocks deleted")
+    errors: int = Field(..., description="Total errors encountered")
+    accounts: int = Field(..., description="Number of configured accounts")
+    sync_flows: int = Field(..., description="Number of configured sync flows")
+    last_updated: str = Field(..., description="Last update time (ISO format)")
+
+
+class WebhookProcessingResult(BaseModel):
+    """Result of processing a webhook notification."""
+    
+    success: bool = Field(..., description="Whether webhook processing was successful")
+    webhook_type: str = Field(..., description="Type of webhook (google_calendar)")
+    timestamp: str = Field(..., description="Processing timestamp (ISO format)")
+    processed_events: int = Field(..., description="Number of events processed")
+    results: List[EventProcessingResult] = Field(default_factory=list, description="Individual event processing results")
+    error: Optional[str] = Field(None, description="Error message if processing failed")
+
+
+class MonitoredCalendar(BaseModel):
+    """Information about a monitored calendar."""
+    
+    calendar_id: str = Field(..., description="Calendar ID")
+    account_id: int = Field(..., description="Account ID")
+    account_name: str = Field(..., description="Account name")
+    flow_name: str = Field(..., description="Sync flow name")
+
+
+class AccountSummary(BaseModel):
+    """Summary information for a Google account."""
+    
+    account_id: int = Field(..., description="Account ID")
+    name: str = Field(..., description="Account name")
+    connection_ok: bool = Field(..., description="Whether connection is working")
+    calendar_count: int = Field(..., description="Number of accessible calendars")
+    client_cached: bool = Field(..., description="Whether client is cached")
+    error: Optional[str] = Field(None, description="Error message if connection failed")
+
+
+class SchedulerStats(BaseModel):
+    """Statistics for the polling scheduler."""
+    
+    total_runs: int = Field(..., description="Total number of runs")
+    successful_runs: int = Field(..., description="Number of successful runs")
+    failed_runs: int = Field(..., description="Number of failed runs")
+    last_run_time: Optional[str] = Field(None, description="Last run time (ISO format)")
+    last_run_success: bool = Field(..., description="Whether last run was successful")
+    last_run_error: Optional[str] = Field(None, description="Error from last run if failed")
+
+
+class SchedulerInfo(BaseModel):
+    """Information about the polling scheduler."""
+    
+    is_running: bool = Field(..., description="Whether scheduler is running")
+    daily_sync_hour: int = Field(..., description="Hour of day for daily sync")
+    daily_sync_timezone: str = Field(..., description="Timezone for daily sync")
+    next_run_time: Optional[str] = Field(None, description="Next scheduled run time (ISO format)")
+    stats: SchedulerStats = Field(..., description="Scheduler statistics")
+
+
+class SyncFlowInfo(BaseModel):
+    """Information about a sync flow."""
+    
+    name: str = Field(..., description="Sync flow name")
+    source_account_id: int = Field(..., description="Source account ID")
+    source_account_name: str = Field(..., description="Source account name")
+    source_calendar_id: str = Field(..., description="Source calendar ID")
+    target_account_id: int = Field(..., description="Target account ID")
+    target_account_name: str = Field(..., description="Target account name")
+    target_calendar_id: str = Field(..., description="Target calendar ID")
+    start_offset: int = Field(..., description="Start offset in minutes")
+    end_offset: int = Field(..., description="End offset in minutes")
+
+
+class CalendarInfo(BaseModel):
+    """Information about a calendar."""
+    
+    id: str = Field(..., description="Calendar ID")
+    summary: str = Field(..., description="Calendar name/summary")
+    access_role: str = Field(..., description="Access role (owner, reader, writer, etc.)")
+    primary: bool = Field(..., description="Whether this is the primary calendar")
+    account_id: int = Field(..., description="Account ID this calendar belongs to")
+    account_name: str = Field(..., description="Account name")
+
+
+class JobHistoryEntry(BaseModel):
+    """Entry in job execution history."""
+    
+    run_time: str = Field(..., description="Job run time (ISO format)")
+    success: bool = Field(..., description="Whether job was successful")
+    error: Optional[str] = Field(None, description="Error message if job failed")
+    type: str = Field(..., description="Type of job (daily_sync, manual_sync, etc.)")
+
+
+class WebhookSubscription(BaseModel):
+    """Information about a webhook subscription."""
+    
+    success: bool = Field(..., description="Whether subscription was successful")
+    calendar_id: str = Field(..., description="Calendar ID")
+    account_id: int = Field(..., description="Account ID")
+    callback_url: str = Field(..., description="Callback URL")
+    channel_id: Optional[str] = Field(None, description="Channel ID from Google")
+    resource_id: Optional[str] = Field(None, description="Resource ID from Google")
+    error: Optional[str] = Field(None, description="Error message if subscription failed")
+
+
+class SystemHealthStatus(BaseModel):
+    """System health status information."""
+    
+    status: str = Field(..., description="Overall system status (healthy, unhealthy)")
+    services: Dict[str, bool] = Field(..., description="Status of individual services")
+    scheduler_running: bool = Field(..., description="Whether scheduler is running")
+    timestamp: Optional[str] = Field(None, description="Health check timestamp (ISO format)")
+    error: Optional[str] = Field(None, description="Error message if unhealthy")
 
 
 class MultiAccountConfig(BaseModel):

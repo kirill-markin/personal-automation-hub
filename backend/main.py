@@ -2,12 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.v1.webhooks.notion import router as notion_router
+from backend.api.v1.webhooks.google_calendar import router as google_calendar_router
 
 app = FastAPI(title="Personal Automation Hub")
 
 # Add CORS middleware
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # type: ignore
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -16,6 +17,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(notion_router, prefix="/api/v1/webhooks", tags=["webhooks"])
+app.include_router(google_calendar_router, prefix="/api/v1/webhooks", tags=["webhooks", "google-calendar"])
 
 
 @app.get("/")
