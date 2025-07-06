@@ -217,6 +217,32 @@ EOF_ENV
 
     # Create Nginx config based on whether domain is set
     if [ "${var.domain_name != null ? var.domain_name : ""}" != "" ]; then
+      echo "Domain specified: ${var.domain_name}"
+      echo "HTTPS-only setup - will fail if SSL certificate cannot be obtained"
+      
+      # Install Certbot first
+      echo "Installing Certbot..."
+      amazon-linux-extras install epel -y
+      yum install -y certbot python2-certbot-nginx
+      
+      # Stop Nginx temporarily to allow Certbot to bind to port 80
+      service nginx stop
+      
+      # Try to get SSL certificate - FAIL if unsuccessful
+      echo "Attempting to get SSL certificate for ${var.domain_name}..."
+      certbot certonly --standalone --non-interactive --agree-tos \
+        --email admin@${var.domain_name} \
+        -d ${var.domain_name} \
+        --preferred-challenges http
+      
+      # Check if certificate was obtained
+      if [ ! -f "/etc/letsencrypt/live/${var.domain_name}/fullchain.pem" ]; then
+        echo "ERROR: Failed to obtain SSL certificate for ${var.domain_name}"
+        echo "Cannot proceed with HTTPS-only setup"
+        exit 1
+      fi
+      
+      echo "SSL certificate obtained successfully!"
       # Create HTTPS config
       cat > /etc/nginx/conf.d/app.conf << EOF_NGINX
 server {
@@ -233,7 +259,7 @@ server {
     listen 443 ssl;
     server_name ${var.domain_name};
 
-    # SSL Configuration (will be updated by Certbot)
+    # SSL Configuration
     ssl_certificate /etc/letsencrypt/live/${var.domain_name}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${var.domain_name}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -249,6 +275,13 @@ server {
     }
 }
 EOF_NGINX
+      
+      # Set up certificate renewal cron job
+      echo "0 3 * * * /usr/bin/certbot renew --quiet --post-hook 'service nginx reload'" > /etc/cron.d/certbot-renew
+      
+      # Start Nginx
+      service nginx start
+      
     else
       # Create HTTP only config
       cat > /etc/nginx/conf.d/app.conf << EOF_NGINX
@@ -265,35 +298,9 @@ server {
     }
 }
 EOF_NGINX
-    fi
-
-    # Create initial self-signed certificate directory structure to prevent Nginx errors
-    mkdir -p /etc/nginx/ssl/
-    
-    # Restart Nginx to apply the new configuration
-    service nginx restart
-
-    # Install Certbot for SSL if domain is specified
-    if [ "${var.domain_name != null ? var.domain_name : ""}" != "" ]; then
-      echo "Setting up SSL for domain ${var.domain_name}"
-      # Install Certbot
-      amazon-linux-extras install epel -y
-      yum install -y certbot python2-certbot-nginx
       
-      # Stop Nginx temporarily to allow Certbot to bind to port 80
-      service nginx stop
-      
-      # Get certificate
-      certbot certonly --standalone --non-interactive --agree-tos \
-        --email admin@${var.domain_name} \
-        -d ${var.domain_name} \
-        --preferred-challenges http
-      
-      # Restart Nginx to pick up the new certificate
-      service nginx start
-      
-      # Set up certificate renewal cron job
-      echo "0 3 * * * /usr/bin/certbot renew --quiet --post-hook 'service nginx reload'" > /etc/cron.d/certbot-renew
+      # Restart Nginx to apply the new configuration
+      service nginx restart
     fi
 
     # Build and start the container
