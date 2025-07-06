@@ -571,7 +571,7 @@ def create_test_webhook_payload(calendar_id: str, resource_state: str = "sync") 
     }
 
 
-def test_webhook_processing_manual(config: MultiAccountConfig) -> None:
+def run_webhook_processing_manual(config: MultiAccountConfig) -> None:
     """Manually test webhook processing with real configuration.
     
     Args:
@@ -663,7 +663,7 @@ def main() -> None:
         
     elif args.manual:
         logger.info("Running manual webhook processing tests...")
-        test_webhook_processing_manual(config)
+        run_webhook_processing_manual(config)
         
     else:
         logger.info("Running basic webhook handler tests...")

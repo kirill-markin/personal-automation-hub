@@ -246,12 +246,33 @@ class GoogleCalendarClient:
             
             events = self.get_events(calendar_id, search_start, search_end)
             
-            # Filter by exact match
+            # Normalize the comparison times (remove seconds, microseconds)
+            # Handle timezone conversion: if search times are naive, treat them as UTC
+            # and convert event times to UTC for comparison
+            if start_time.tzinfo is None:
+                # Search times are naive, treat as UTC and convert event times to UTC
+                normalized_start = start_time.replace(second=0, microsecond=0)
+                normalized_end = end_time.replace(second=0, microsecond=0)
+            else:
+                # Search times have timezone, convert to UTC naive
+                normalized_start = start_time.astimezone(timezone.utc).replace(second=0, microsecond=0, tzinfo=None)
+                normalized_end = end_time.astimezone(timezone.utc).replace(second=0, microsecond=0, tzinfo=None)
+            
+            # Filter by exact match with normalized times
             matching_events = []
             for event in events:
-                if (event['title'] == title and 
-                    event['start_time'] == start_time and 
-                    event['end_time'] == end_time):
+                # Convert event times to UTC naive for comparison
+                if event['start_time'].tzinfo is not None:
+                    event_start = event['start_time'].astimezone(timezone.utc).replace(second=0, microsecond=0, tzinfo=None)
+                    event_end = event['end_time'].astimezone(timezone.utc).replace(second=0, microsecond=0, tzinfo=None)
+                else:
+                    event_start = event['start_time'].replace(second=0, microsecond=0)
+                    event_end = event['end_time'].replace(second=0, microsecond=0)
+                
+                # Case-insensitive title comparison to handle Google Calendar auto-capitalization
+                if (event['title'].lower() == title.lower() and 
+                    event_start == normalized_start and 
+                    event_end == normalized_end):
                     matching_events.append(event)  # type: ignore
             
             return matching_events  # type: ignore

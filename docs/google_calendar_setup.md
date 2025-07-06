@@ -211,7 +211,7 @@ SYNC_FLOW_1_END_OFFSET=10
 - Events must be confirmed (not cancelled)
 
 ### Busy Block Creation
-- Creates events titled "busy" in target calendars
+- Creates events titled "Busy" in target calendars
 - Uses exact time matching to prevent duplicates
 - Resistant to manual editing (won't break if user modifies busy blocks)
 

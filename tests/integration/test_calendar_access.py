@@ -125,7 +125,7 @@ def test_sync_flow_validation():
         assert target_found, f"Target calendar {flow.target_calendar_id} not found for flow {flow.name}"
 
 
-def test_single_account(account_manager: AccountManager, account_id: int) -> Dict[str, Any]:
+def check_single_account(account_manager: AccountManager, account_id: int) -> Dict[str, Any]:
     """Test access to a single Google account.
     
     Args:
@@ -174,7 +174,7 @@ def test_single_account(account_manager: AccountManager, account_id: int) -> Dic
     return results  # type: ignore
 
 
-def test_all_accounts(config: MultiAccountConfig) -> List[Dict[str, Any]]:
+def check_all_accounts(config: MultiAccountConfig) -> List[Dict[str, Any]]:
     """Test access to all configured Google accounts.
     
     Args:
@@ -196,7 +196,7 @@ def test_all_accounts(config: MultiAccountConfig) -> List[Dict[str, Any]]:
     
     # Test each account
     for account in config.accounts:
-        result = test_single_account(account_manager, account.account_id)
+        result = check_single_account(account_manager, account.account_id)
         results.append(result)  # type: ignore
     
     return results  # type: ignore
@@ -246,7 +246,7 @@ def display_account_results(results: List[Dict[str, Any]]) -> None:
     print("="*60)
 
 
-def test_sync_flows(config: MultiAccountConfig) -> None:
+def check_sync_flows(config: MultiAccountConfig) -> None:
     """Test sync flow configurations.
     
     Args:
@@ -405,14 +405,14 @@ def main() -> None:
     
     # Test sync flows if requested
     if args.list_flows:
-        test_sync_flows(config)
+        check_sync_flows(config)
         return
     
     # Test specific account if requested
     if args.account_id:
         try:
             account_manager = AccountManager(config)
-            result = test_single_account(account_manager, args.account_id)
+            result = check_single_account(account_manager, args.account_id)
             display_account_results([result])
         except AccountManagerError as e:
             logger.error(f"AccountManager error: {e}")
@@ -422,11 +422,11 @@ def main() -> None:
     
     # Test all accounts
     try:
-        results = test_all_accounts(config)
+        results = check_all_accounts(config)
         display_account_results(results)
         
         # Also test sync flows
-        test_sync_flows(config)
+        check_sync_flows(config)
         
         # Show summary
         display_configuration_summary()

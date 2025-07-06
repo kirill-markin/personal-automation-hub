@@ -123,7 +123,7 @@ class SyncEngineTestHelper:
             return False
     
     def find_busy_blocks_by_title(self, account_id: int, calendar_id: str, 
-                                 title: str = "busy") -> List[Dict[str, Any]]:
+                                 title: str = "Busy") -> List[Dict[str, Any]]:
         """Find busy blocks in a calendar by title.
         
         Args:
@@ -272,7 +272,7 @@ def test_process_event_with_multiple_participants():
         busy_blocks = helper.find_busy_blocks_by_title(
             account_id=flow.target_account_id,
             calendar_id=flow.target_calendar_id,
-            title="busy"
+            title="Busy"
         )
         
         # Should have at least one busy block
@@ -292,7 +292,7 @@ def test_process_event_with_multiple_participants():
             'account_id': flow.target_account_id,
             'calendar_id': flow.target_calendar_id,
             'event_id': test_busy_block['id'],
-            'title': 'busy'
+            'title': 'Busy'
         })
         
         logger.info(f"Successfully processed event with {len(participants)} participants")
@@ -365,7 +365,7 @@ def test_process_event_with_single_participant():
         busy_blocks = helper.find_busy_blocks_by_title(
             account_id=flow.target_account_id,
             calendar_id=flow.target_calendar_id,
-            title="busy"
+            title="Busy"
         )
         
         # Should not have busy block for our test event
@@ -435,7 +435,7 @@ def test_event_deletion_removes_busy_block():
         busy_blocks_before = helper.find_busy_blocks_by_title(
             account_id=flow.target_account_id,
             calendar_id=flow.target_calendar_id,
-            title="busy"
+            title="Busy"
         )
         
         test_busy_block = None
@@ -476,7 +476,7 @@ def test_event_deletion_removes_busy_block():
         busy_blocks_after = helper.find_busy_blocks_by_title(
             account_id=flow.target_account_id,
             calendar_id=flow.target_calendar_id,
-            title="busy"
+            title="Busy"
         )
         
         # Should not have busy block for our test event anymore
@@ -624,7 +624,7 @@ def test_idempotent_busy_block_creation():
         busy_blocks_after_first = helper.find_busy_blocks_by_title(
             account_id=flow.target_account_id,
             calendar_id=flow.target_calendar_id,
-            title="busy"
+            title="Busy"
         )
         
         first_count = len([block for block in busy_blocks_after_first 
@@ -637,7 +637,7 @@ def test_idempotent_busy_block_creation():
         busy_blocks_after_second = helper.find_busy_blocks_by_title(
             account_id=flow.target_account_id,
             calendar_id=flow.target_calendar_id,
-            title="busy"
+            title="Busy"
         )
         
         second_count = len([block for block in busy_blocks_after_second 
@@ -662,7 +662,7 @@ def test_idempotent_busy_block_creation():
                 'account_id': flow.target_account_id,
                 'calendar_id': flow.target_calendar_id,
                 'event_id': test_busy_block['id'],
-                'title': 'busy'
+                'title': 'Busy'
             })
         
         logger.info(f"Successfully verified idempotent busy block creation")

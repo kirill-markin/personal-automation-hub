@@ -128,7 +128,7 @@ class BusyBlockSearchCriteria(BaseModel):
     calendar_id: str = Field(..., description="Calendar ID to search")
     start_time: datetime = Field(..., description="Exact start time to match")
     end_time: datetime = Field(..., description="Exact end time to match")
-    title: str = Field(default="busy", description="Event title to match")
+    title: str = Field(default="Busy", description="Event title to match")
     
     @model_validator(mode='after')
     def validate_end_time(self) -> 'BusyBlockSearchCriteria':
@@ -145,7 +145,7 @@ class BusyBlock(BaseModel):
     target_calendar_id: str = Field(..., description="Target calendar for the busy block")
     start_time: datetime = Field(..., description="Busy block start time")
     end_time: datetime = Field(..., description="Busy block end time")
-    title: str = Field(default="busy", description="Busy block title")
+    title: str = Field(default="Busy", description="Busy block title")
     
     @model_validator(mode='after')
     def validate_end_time(self) -> 'BusyBlock':
@@ -179,7 +179,7 @@ class BusyBlock(BaseModel):
             target_calendar_id=flow.target_calendar_id,
             start_time=busy_start,
             end_time=busy_end,
-            title="busy"
+            title="Busy"
         )
 
 
