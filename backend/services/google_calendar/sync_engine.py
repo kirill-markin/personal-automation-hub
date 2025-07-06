@@ -7,7 +7,7 @@ and creating/deleting busy blocks across multiple sync flows.
 
 import logging
 from typing import List, Tuple
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from backend.models.calendar import (
     CalendarEvent, 
@@ -315,6 +315,7 @@ class CalendarSyncEngine:
         try:
             target_client = self.account_manager.get_client(busy_block.target_account_id)
             
+            # First check for exact match (original logic)
             existing_blocks = target_client.find_events_by_time_and_title(
                 calendar_id=busy_block.target_calendar_id,
                 start_time=busy_block.start_time,
@@ -322,10 +323,68 @@ class CalendarSyncEngine:
                 title=busy_block.title
             )
             
-            return len(existing_blocks) > 0
+            if len(existing_blocks) > 0:
+                logger.debug(f"Found exact match busy block for event {busy_block.source_event.id}")
+                return True
+            
+            # Check for covering busy blocks
+            return self._covering_busy_block_exists(busy_block)
             
         except Exception as e:
             logger.error(f"Error checking if busy block exists: {e}")
+            return False
+
+    def _covering_busy_block_exists(self, busy_block: BusyBlock) -> bool:
+        """Check if a busy block exists that fully covers the required period.
+        
+        This method checks if there's already a busy block that starts at or before
+        the required start time and ends at or after the required end time.
+        
+        Args:
+            busy_block: Busy block to check coverage for
+            
+        Returns:
+            True if a covering busy block exists, False otherwise
+        """
+        try:
+            target_client = self.account_manager.get_client(busy_block.target_account_id)
+            
+            # Get events in a wider time range to find potentially covering blocks
+            # Search from 4 hours before to 4 hours after to catch longer existing blocks
+            search_start = busy_block.start_time - timedelta(hours=4)
+            search_end = busy_block.end_time + timedelta(hours=4)
+            
+            existing_events = target_client.get_events(
+                calendar_id=busy_block.target_calendar_id,
+                start_time=search_start,
+                end_time=search_end
+            )
+            
+            # Check each existing event to see if it covers our required period
+            for event in existing_events:
+                # Skip events that are not busy blocks (have different titles)
+                if event['title'].lower() != busy_block.title.lower():
+                    continue
+                
+                # Skip all-day events - they should not prevent creation of regular busy blocks
+                if event.get('all_day', False):
+                    logger.debug(f"Skipping all-day busy block when checking coverage for event {busy_block.source_event.id}")
+                    continue
+                
+                # Check if this event fully covers our required period
+                # Event must start at or before our start time and end at or after our end time
+                if (event['start_time'] <= busy_block.start_time and 
+                    event['end_time'] >= busy_block.end_time):
+                    logger.debug(f"Found covering busy block for event {busy_block.source_event.id}: "
+                               f"existing block ({event['start_time']} to {event['end_time']}) "
+                               f"covers required period ({busy_block.start_time} to {busy_block.end_time})")
+                    return True
+            
+            logger.debug(f"No covering busy block found for event {busy_block.source_event.id}")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error checking for covering busy block: {e}")
             return False
     
     def sync_calendar_events(self, calendar_id: str, account_id: int, 

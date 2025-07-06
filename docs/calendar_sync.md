@@ -161,7 +161,9 @@ The system uses **time-based matching** for busy block management:
 1. **Creation**: 
    - Calculate busy block time using source event time + configured offsets
    - Search for existing busy block with exact time match
-   - Create new busy block only if no match exists
+   - If no exact match, check if existing busy blocks fully cover the required period
+   - Skip all-day events when checking coverage (they don't prevent creation)
+   - Create new busy block only if no match or coverage exists
 
 2. **Deletion**:
    - When source event is cancelled, calculate expected busy block times
