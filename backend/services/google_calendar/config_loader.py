@@ -228,7 +228,7 @@ def validate_environment_variables() -> Dict[str, str]:
         validation_results["daily_sync_timezone"] = f"Timezone: {daily_sync_timezone}"
         
         # Try to create full configuration to validate cross-references
-        config = MultiAccountConfig(
+        MultiAccountConfig(
             accounts=accounts,
             sync_flows=sync_flows,
             daily_sync_hour=daily_sync_hour,
