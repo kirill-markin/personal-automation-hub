@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-List all calendars for configured Google accounts.
+Integration test utility for listing Google Calendar calendars.
 
 This script displays all available calendars for each Google account
 configured in environment variables. This is useful for setting up
 sync flows and finding the correct calendar IDs.
 
 Usage:
-    python scripts/list_calendars.py
-    python scripts/list_calendars.py --account-id 1
-    python scripts/list_calendars.py --json
+    # As pytest integration test
+    python -m pytest tests/integration/test_list_calendars.py -v -m integration
+    
+    # As standalone script
+    python tests/integration/test_list_calendars.py
+    python tests/integration/test_list_calendars.py --account-id 1
+    python tests/integration/test_list_calendars.py --json
 """
 
 import os
@@ -19,12 +23,13 @@ import argparse
 import logging
 from typing import List, TypedDict
 from dotenv import load_dotenv
+import pytest
 
 # Load environment variables from .env file
 load_dotenv(override=True)
 
 # Add the project root to the path so we can import our modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from backend.services.google_calendar.config_loader import (
     load_multi_account_config,
@@ -56,6 +61,48 @@ class AccountResult(TypedDict):
     success: bool
     error: str | None
     calendars: List[CalendarInfo]
+
+
+@pytest.mark.integration
+def test_list_all_calendars():
+    """Test listing calendars for all configured accounts."""
+    config = load_multi_account_config()
+    account_manager = AccountManager(config)
+    
+    results: List[AccountResult] = []
+    
+    for account in config.accounts:
+        result = get_calendars_for_account(account_manager, account.account_id)
+        results.append(result)
+        
+        # Assert that the account was successfully processed
+        assert result["success"], f"Failed to get calendars for account {account.account_id}: {result['error']}"
+        assert len(result["calendars"]) > 0, f"No calendars found for account {account.account_id}"
+    
+    # Assert we have results for all accounts
+    assert len(results) == len(config.accounts), "Not all accounts were processed"
+
+
+@pytest.mark.integration
+def test_specific_account_calendar_listing():
+    """Test listing calendars for a specific account."""
+    config = load_multi_account_config()
+    account_manager = AccountManager(config)
+    
+    # Test first account
+    first_account = config.accounts[0]
+    result = get_calendars_for_account(account_manager, first_account.account_id)
+    
+    assert result["success"], f"Failed to get calendars for account {first_account.account_id}: {result['error']}"
+    assert result["account_id"] == first_account.account_id
+    assert result["account_name"] == first_account.name
+    assert len(result["calendars"]) > 0, f"No calendars found for account {first_account.account_id}"
+    
+    # Verify calendar structure
+    for calendar in result["calendars"]:
+        assert "name" in calendar, "Calendar missing name field"
+        assert "id" in calendar, "Calendar missing id field"
+        assert calendar["id"], "Calendar ID is empty"
 
 
 def get_calendars_for_account(account_manager: AccountManager, account_id: int) -> AccountResult:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for Google Calendar access with multiple accounts.
+Integration tests for Google Calendar access with multiple accounts.
 
 This script tests the calendar synchronization system by:
 1. Loading multi-account configuration from environment variables
@@ -9,9 +9,13 @@ This script tests the calendar synchronization system by:
 4. Verifying sync flow configurations
 
 Usage:
-    python scripts/test_calendar_access.py
-    python scripts/test_calendar_access.py --account-id 1
-    python scripts/test_calendar_access.py --list-flows
+    # As pytest integration test
+    python -m pytest tests/integration/test_calendar_access.py -v -m integration
+    
+    # As standalone script
+    python tests/integration/test_calendar_access.py
+    python tests/integration/test_calendar_access.py --account-id 1
+    python tests/integration/test_calendar_access.py --list-flows
 """
 
 import os
@@ -20,12 +24,13 @@ import argparse
 import logging
 from typing import List, Dict, Any
 from dotenv import load_dotenv
+import pytest
 
 # Load environment variables from .env file
 load_dotenv(override=True)
 
 # Add the project root to the path so we can import our modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from backend.services.google_calendar.config_loader import (
     load_multi_account_config,
@@ -37,6 +42,87 @@ from backend.models.calendar import MultiAccountConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@pytest.mark.integration
+def test_load_configuration():
+    """Test loading multi-account configuration from environment variables."""
+    config = load_multi_account_config()
+    assert len(config.accounts) > 0, "No accounts configured"
+    assert len(config.sync_flows) > 0, "No sync flows configured"
+    
+    # Validate each account has required fields
+    for account in config.accounts:
+        assert account.account_id is not None, f"Account {account.name} missing account_id"
+        assert account.name, f"Account {account.account_id} missing name"
+        assert account.client_id, f"Account {account.name} missing client_id"
+        assert account.client_secret, f"Account {account.name} missing client_secret"
+        assert account.refresh_token, f"Account {account.name} missing refresh_token"
+
+
+@pytest.mark.integration
+def test_account_manager_creation():
+    """Test creating AccountManager with loaded configuration."""
+    config = load_multi_account_config()
+    account_manager = AccountManager(config)
+    
+    # Test that all accounts are accessible
+    for account in config.accounts:
+        retrieved_account = account_manager.get_account(account.account_id)
+        assert retrieved_account is not None, f"Account {account.account_id} not found in manager"
+        assert retrieved_account.name == account.name, f"Account name mismatch for {account.account_id}"
+
+
+@pytest.mark.integration
+def test_account_connections():
+    """Test connections to all configured Google accounts."""
+    config = load_multi_account_config()
+    account_manager = AccountManager(config)
+    
+    for account in config.accounts:
+        logger.info(f"Testing connection to account {account.account_id} ({account.name})...")
+        connection_ok = account_manager.test_account_connection(account.account_id)
+        assert connection_ok, f"Connection failed for account {account.account_id} ({account.name})"
+
+
+@pytest.mark.integration
+def test_calendar_access():
+    """Test calendar access for all configured accounts."""
+    config = load_multi_account_config()
+    account_manager = AccountManager(config)
+    
+    for account in config.accounts:
+        logger.info(f"Testing calendar access for account {account.account_id} ({account.name})...")
+        calendars = account_manager.list_calendars_for_account(account.account_id)
+        assert len(calendars) > 0, f"No calendars found for account {account.account_id} ({account.name})"
+
+
+@pytest.mark.integration
+def test_sync_flow_validation():
+    """Test sync flow configurations and calendar access."""
+    config = load_multi_account_config()
+    account_manager = AccountManager(config)
+    
+    for flow in config.sync_flows:
+        logger.info(f"Testing sync flow: {flow.name}")
+        
+        # Test source account exists
+        source_account = account_manager.get_account(flow.source_account_id)
+        assert source_account is not None, f"Source account {flow.source_account_id} not found for flow {flow.name}"
+        
+        # Test target account exists
+        target_account = account_manager.get_account(flow.target_account_id)
+        assert target_account is not None, f"Target account {flow.target_account_id} not found for flow {flow.name}"
+        
+        # Test source calendar access
+        source_calendars = account_manager.list_calendars_for_account(flow.source_account_id)
+        source_found = any(cal.get('id') == flow.source_calendar_id for cal in source_calendars)
+        assert source_found, f"Source calendar {flow.source_calendar_id} not found for flow {flow.name}"
+        
+        # Test target calendar access
+        target_calendars = account_manager.list_calendars_for_account(flow.target_account_id)
+        target_found = any(cal.get('id') == flow.target_calendar_id for cal in target_calendars)
+        assert target_found, f"Target calendar {flow.target_calendar_id} not found for flow {flow.name}"
 
 
 def test_single_account(account_manager: AccountManager, account_id: int) -> Dict[str, Any]:

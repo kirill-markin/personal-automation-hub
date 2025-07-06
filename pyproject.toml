@@ -54,4 +54,19 @@ no_implicit_optional = true
 strict_optional = true
 warn_redundant_casts = true
 warn_return_any = true
-warn_unused_ignores = true 
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-m", "not integration",
+    "--tb=short",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "integration: marks tests as integration tests that require real API credentials (deselect with '-m \"not integration\"')",
+] 
