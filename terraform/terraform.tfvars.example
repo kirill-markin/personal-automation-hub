@@ -38,6 +38,9 @@ notion_database_id = "your-notion-database-id"
 # GOOGLE CALENDAR CONFIGURATION
 # =============================================================================
 
+# Google Cloud Project Configuration
+google_cloud_project_id = "your-google-cloud-project-id"
+
 # Shared OAuth2 Configuration
 google_client_id = "your-google-client-id.apps.googleusercontent.com"
 google_client_secret = "your-google-client-secret"

@@ -12,6 +12,7 @@ services:
       - ENVIRONMENT=production
       
       # Google Calendar Configuration
+      - GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - DAILY_SYNC_HOUR=${DAILY_SYNC_HOUR}

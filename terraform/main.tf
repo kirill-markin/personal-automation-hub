@@ -169,6 +169,9 @@ NOTION_DATABASE_ID=${var.notion_database_id}
 # =============================================================================
 # GOOGLE CALENDAR CONFIGURATION
 # =============================================================================
+# Google Cloud Project Configuration
+GOOGLE_CLOUD_PROJECT_ID=${var.google_cloud_project_id != null ? var.google_cloud_project_id : ""}
+
 # Shared OAuth2 Configuration
 GOOGLE_CLIENT_ID=${var.google_client_id != null ? var.google_client_id : ""}
 GOOGLE_CLIENT_SECRET=${var.google_client_secret != null ? var.google_client_secret : ""}

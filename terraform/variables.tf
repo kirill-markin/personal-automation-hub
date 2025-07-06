@@ -82,6 +82,13 @@ variable "notion_database_id" {
 # GOOGLE CALENDAR CONFIGURATION
 # =============================================================================
 
+# Google Cloud Project Configuration
+variable "google_cloud_project_id" {
+  description = "Google Cloud Project ID for Gmail and Calendar APIs"
+  type        = string
+  default     = null
+}
+
 # Shared OAuth2 Configuration
 variable "google_client_id" {
   description = "Google OAuth2 client ID for Calendar API"
