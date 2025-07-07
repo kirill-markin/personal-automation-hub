@@ -14,9 +14,51 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}🚀 Personal Automation Hub - Deployment Script${NC}"
+
+# Function to handle SSH known_hosts for recreated instances
+handle_ssh_known_hosts() {
+    local ip=$1
+    local method=$2
+    
+    if [ "$method" = "recreate" ]; then
+        echo -e "${BLUE}🔐 SSH Security Notice:${NC}"
+        echo "When recreating EC2 instances, SSH host keys change."
+        echo "You have several options:"
+        echo "  1. Remove old key manually: ssh-keygen -R $ip"
+        echo "  2. Let this script handle it (less secure for production)"
+        echo "  3. Cancel and handle manually for maximum security"
+        echo ""
+        read -p "Should this script automatically update known_hosts? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}🔧 Removing old SSH key for $ip...${NC}"
+            ssh-keygen -R $ip 2>/dev/null || true
+            echo -e "${GREEN}✅ SSH key removed${NC}"
+            return 0
+        else
+            echo -e "${YELLOW}⚠️  You'll need to manually remove the old SSH key before connecting${NC}"
+            echo -e "${YELLOW}   Run: ssh-keygen -R $ip${NC}"
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Function to execute SSH commands with better security
+ssh_exec() {
+    local ip=$1
+    local commands=$2
+    
+    # Use accept-new instead of no checking - more secure
+    ssh -o StrictHostKeyChecking=accept-new \
+        -o UserKnownHostsFile=~/.ssh/known_hosts \
+        -o ConnectTimeout=10 \
+        ec2-user@$ip "$commands"
+}
 
 # Get EC2 instance IP
 cd "$PROJECT_DIR/terraform"
@@ -47,9 +89,7 @@ case $METHOD in
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo -e "${YELLOW}🔧 Updating code on remote server...${NC}"
             
-            # Note: This assumes you have SSH key configured
-            # You might need to adjust the SSH command based on your setup
-            ssh -o StrictHostKeyChecking=no ec2-user@$ELASTIC_IP << 'EOF'
+            ssh_exec $ELASTIC_IP '
                 cd /opt/app
                 echo "📥 Pulling latest changes..."
                 sudo git pull origin main
@@ -58,7 +98,7 @@ case $METHOD in
                 sudo /usr/local/bin/docker-compose up -d --build
                 echo "✅ Container status:"
                 sudo docker ps | grep app-backend
-EOF
+            '
             echo -e "${GREEN}✅ Quick deployment completed!${NC}"
         else
             echo -e "${YELLOW}❌ Deployment cancelled${NC}"
@@ -76,11 +116,32 @@ EOF
         read -p "Continue? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
+            # Handle SSH known_hosts before recreation
+            handle_ssh_known_hosts $ELASTIC_IP "recreate"
+            
             echo -e "${YELLOW}🔧 Tainting EC2 instance...${NC}"
             terraform taint aws_instance.app_server
             echo -e "${YELLOW}🔧 Applying changes...${NC}"
             terraform apply
             echo -e "${GREEN}✅ Full recreation completed!${NC}"
+            
+            # Wait a bit for the instance to be ready
+            echo -e "${YELLOW}⏳ Waiting for instance to be ready...${NC}"
+            sleep 30
+            
+            echo -e "${YELLOW}🔍 Testing SSL certificate deployment...${NC}"
+            echo "Checking if HTTPS is working..."
+            for i in {1..12}; do
+                if curl -I -s -k https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task >/dev/null 2>&1; then
+                    echo -e "${GREEN}✅ HTTPS is working!${NC}"
+                    break
+                elif [ $i -eq 12 ]; then
+                    echo -e "${YELLOW}⚠️  HTTPS not ready yet, check logs manually${NC}"
+                else
+                    echo -e "${YELLOW}   Attempt $i/12 - waiting 10 seconds...${NC}"
+                    sleep 10
+                fi
+            done
         else
             echo -e "${YELLOW}❌ Deployment cancelled${NC}"
         fi
@@ -106,4 +167,11 @@ esac
 
 echo -e "${GREEN}🎯 Current webhook URLs:${NC}"
 echo "  Stable: http://$ELASTIC_IP:8000/api/v1/webhooks/notion-personal/create-task"
-echo "  HTTP:   http://$ELASTIC_IP/api/v1/webhooks/notion-personal/create-task" 
+echo "  HTTP:   http://$ELASTIC_IP/api/v1/webhooks/notion-personal/create-task"
+
+# Check if HTTPS is available
+if curl -I -s -k https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task >/dev/null 2>&1; then
+    echo -e "${GREEN}  HTTPS:  https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task${NC}"
+else
+    echo -e "${YELLOW}  HTTPS:  https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task (not ready)${NC}"
+fi 
