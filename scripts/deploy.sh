@@ -122,7 +122,7 @@ case $METHOD in
             echo -e "${YELLOW}🔧 Tainting EC2 instance...${NC}"
             terraform taint aws_instance.app_server
             echo -e "${YELLOW}🔧 Applying changes...${NC}"
-            terraform apply
+            terraform apply -auto-approve
             echo -e "${GREEN}✅ Full recreation completed!${NC}"
             
             # Wait a bit for the instance to be ready
