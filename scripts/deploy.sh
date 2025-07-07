@@ -65,7 +65,6 @@ cd "$PROJECT_DIR/terraform"
 INSTANCE_IP=$(terraform output -raw ec2_public_ip 2>/dev/null || echo "")
 ELASTIC_IP=$(terraform output -raw elastic_ip 2>/dev/null || echo "")
 DOMAIN_NAME=$(terraform output -raw domain_name 2>/dev/null || echo "")
-HTTPS_URL=$(terraform output -raw webhook_url_https 2>/dev/null || echo "")
 
 if [ -z "$INSTANCE_IP" ]; then
     echo -e "${RED}❌ Error: Cannot get EC2 instance IP. Run 'terraform apply' first.${NC}"
@@ -132,18 +131,18 @@ case $METHOD in
             
             # Update variables after terraform apply
             DOMAIN_NAME=$(terraform output -raw domain_name 2>/dev/null || echo "")
-            HTTPS_URL=$(terraform output -raw webhook_url_https 2>/dev/null || echo "")
             
             # Wait a bit for the instance to be ready
             echo -e "${YELLOW}⏳ Waiting for instance to be ready...${NC}"
             sleep 30
             
             # Test HTTPS only if domain is configured
-            if [ -n "$DOMAIN_NAME" ] && [ "$DOMAIN_NAME" != "null" ] && [ -n "$HTTPS_URL" ] && [ "$HTTPS_URL" != "null" ]; then
+            if [ -n "$DOMAIN_NAME" ] && [ "$DOMAIN_NAME" != "null" ]; then
                 echo -e "${YELLOW}🔍 Testing SSL certificate deployment...${NC}"
                 echo "Checking if HTTPS is working for domain: $DOMAIN_NAME"
+                HTTPS_ROOT_URL="https://$DOMAIN_NAME/"
                 for i in {1..12}; do
-                    if curl -I -s -k "$HTTPS_URL" >/dev/null 2>&1; then
+                    if curl -I -s -k "$HTTPS_ROOT_URL" >/dev/null 2>&1; then
                         echo -e "${GREEN}✅ HTTPS is working!${NC}"
                         break
                     elif [ $i -eq 12 ]; then
@@ -183,18 +182,18 @@ esac
 cd "$PROJECT_DIR/terraform"
 ELASTIC_IP=$(terraform output -raw elastic_ip 2>/dev/null || echo "")
 DOMAIN_NAME=$(terraform output -raw domain_name 2>/dev/null || echo "")
-HTTPS_URL=$(terraform output -raw webhook_url_https 2>/dev/null || echo "")
 
-echo -e "${GREEN}🎯 Current webhook URLs:${NC}"
-echo "  Stable: http://$ELASTIC_IP:8000/api/v1/webhooks/notion-personal/create-task"
-echo "  HTTP:   http://$ELASTIC_IP/api/v1/webhooks/notion-personal/create-task"
+echo -e "${GREEN}🎯 Current service URLs:${NC}"
+echo "  Stable: http://$ELASTIC_IP:8000/"
+echo "  HTTP:   http://$ELASTIC_IP/"
 
 # Check if HTTPS is available (only if domain is configured)
-if [ -n "$DOMAIN_NAME" ] && [ "$DOMAIN_NAME" != "null" ] && [ -n "$HTTPS_URL" ] && [ "$HTTPS_URL" != "null" ]; then
-    if curl -I -s -k "$HTTPS_URL" >/dev/null 2>&1; then
-        echo -e "${GREEN}  HTTPS:  $HTTPS_URL${NC}"
+if [ -n "$DOMAIN_NAME" ] && [ "$DOMAIN_NAME" != "null" ]; then
+    HTTPS_ROOT_URL="https://$DOMAIN_NAME/"
+    if curl -I -s -k "$HTTPS_ROOT_URL" >/dev/null 2>&1; then
+        echo -e "${GREEN}  HTTPS:  $HTTPS_ROOT_URL${NC}"
     else
-        echo -e "${YELLOW}  HTTPS:  $HTTPS_URL (not ready)${NC}"
+        echo -e "${YELLOW}  HTTPS:  $HTTPS_ROOT_URL (not ready)${NC}"
     fi
 else
     echo -e "${YELLOW}  HTTPS:  Not configured (set domain_name in terraform.tfvars)${NC}"
