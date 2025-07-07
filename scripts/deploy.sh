@@ -60,10 +60,12 @@ ssh_exec() {
         ec2-user@$ip "$commands"
 }
 
-# Get EC2 instance IP
+# Get EC2 instance IP and domain configuration
 cd "$PROJECT_DIR/terraform"
 INSTANCE_IP=$(terraform output -raw ec2_public_ip 2>/dev/null || echo "")
 ELASTIC_IP=$(terraform output -raw elastic_ip 2>/dev/null || echo "")
+DOMAIN_NAME=$(terraform output -raw domain_name 2>/dev/null || echo "")
+HTTPS_URL=$(terraform output -raw webhook_url_https 2>/dev/null || echo "")
 
 if [ -z "$INSTANCE_IP" ]; then
     echo -e "${RED}❌ Error: Cannot get EC2 instance IP. Run 'terraform apply' first.${NC}"
@@ -72,6 +74,9 @@ fi
 
 echo -e "${YELLOW}📍 Instance IP: $INSTANCE_IP${NC}"
 echo -e "${YELLOW}📍 Elastic IP: $ELASTIC_IP${NC}"
+if [ -n "$DOMAIN_NAME" ] && [ "$DOMAIN_NAME" != "null" ]; then
+    echo -e "${YELLOW}📍 Domain: $DOMAIN_NAME${NC}"
+fi
 
 METHOD=${1:-quick}
 
@@ -129,19 +134,24 @@ case $METHOD in
             echo -e "${YELLOW}⏳ Waiting for instance to be ready...${NC}"
             sleep 30
             
-            echo -e "${YELLOW}🔍 Testing SSL certificate deployment...${NC}"
-            echo "Checking if HTTPS is working..."
-            for i in {1..12}; do
-                if curl -I -s -k https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task >/dev/null 2>&1; then
-                    echo -e "${GREEN}✅ HTTPS is working!${NC}"
-                    break
-                elif [ $i -eq 12 ]; then
-                    echo -e "${YELLOW}⚠️  HTTPS not ready yet, check logs manually${NC}"
-                else
-                    echo -e "${YELLOW}   Attempt $i/12 - waiting 10 seconds...${NC}"
-                    sleep 10
-                fi
-            done
+            # Test HTTPS only if domain is configured
+            if [ -n "$DOMAIN_NAME" ] && [ "$DOMAIN_NAME" != "null" ] && [ -n "$HTTPS_URL" ] && [ "$HTTPS_URL" != "null" ]; then
+                echo -e "${YELLOW}🔍 Testing SSL certificate deployment...${NC}"
+                echo "Checking if HTTPS is working for domain: $DOMAIN_NAME"
+                for i in {1..12}; do
+                    if curl -I -s -k "$HTTPS_URL" >/dev/null 2>&1; then
+                        echo -e "${GREEN}✅ HTTPS is working!${NC}"
+                        break
+                    elif [ $i -eq 12 ]; then
+                        echo -e "${YELLOW}⚠️  HTTPS not ready yet, check logs manually${NC}"
+                    else
+                        echo -e "${YELLOW}   Attempt $i/12 - waiting 10 seconds...${NC}"
+                        sleep 10
+                    fi
+                done
+            else
+                echo -e "${YELLOW}ℹ️  No domain configured, skipping HTTPS check${NC}"
+            fi
         else
             echo -e "${YELLOW}❌ Deployment cancelled${NC}"
         fi
@@ -169,9 +179,13 @@ echo -e "${GREEN}🎯 Current webhook URLs:${NC}"
 echo "  Stable: http://$ELASTIC_IP:8000/api/v1/webhooks/notion-personal/create-task"
 echo "  HTTP:   http://$ELASTIC_IP/api/v1/webhooks/notion-personal/create-task"
 
-# Check if HTTPS is available
-if curl -I -s -k https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task >/dev/null 2>&1; then
-    echo -e "${GREEN}  HTTPS:  https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task${NC}"
+# Check if HTTPS is available (only if domain is configured)
+if [ -n "$DOMAIN_NAME" ] && [ "$DOMAIN_NAME" != "null" ] && [ -n "$HTTPS_URL" ] && [ "$HTTPS_URL" != "null" ]; then
+    if curl -I -s -k "$HTTPS_URL" >/dev/null 2>&1; then
+        echo -e "${GREEN}  HTTPS:  $HTTPS_URL${NC}"
+    else
+        echo -e "${YELLOW}  HTTPS:  $HTTPS_URL (not ready)${NC}"
+    fi
 else
-    echo -e "${YELLOW}  HTTPS:  https://auto.kirill-markin.com/api/v1/webhooks/notion-personal/create-task (not ready)${NC}"
+    echo -e "${YELLOW}  HTTPS:  Not configured (set domain_name in terraform.tfvars)${NC}"
 fi 

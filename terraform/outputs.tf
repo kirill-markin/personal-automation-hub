@@ -50,4 +50,15 @@ output "webhook_url_stable" {
 output "webhook_url_stable_http" {
   description = "The stable webhook URL for the Notion integration via HTTP port 80 (Nginx)"
   value       = "http://${aws_eip.app_eip.public_dns}/api/v1/webhooks/notion-personal/create-task"
+}
+
+# Domain and HTTPS outputs
+output "domain_name" {
+  description = "The configured domain name for the application"
+  value       = var.domain_name
+}
+
+output "webhook_url_https" {
+  description = "The HTTPS webhook URL for the Notion integration (if domain is configured)"
+  value       = var.domain_name != null ? "https://${var.domain_name}/api/v1/webhooks/notion-personal/create-task" : null
 } 
