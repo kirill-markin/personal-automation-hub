@@ -328,8 +328,8 @@ EOF_NGINX
 0 3 * * * root /usr/bin/certbot renew --quiet --post-hook 'service nginx reload && aws s3 cp /etc/letsencrypt/live/$DOMAIN/ s3://$S3_BUCKET/live/$DOMAIN/ --recursive && aws s3 cp /etc/letsencrypt/archive/$DOMAIN/ s3://$S3_BUCKET/archive/$DOMAIN/ --recursive'
 EOF_CRON
         
-        # Start Nginx
-        service nginx start
+        # Restart Nginx to apply new SSL configuration
+        service nginx restart
         
       else
         echo "ERROR: Could not obtain or restore SSL certificate for $DOMAIN"
