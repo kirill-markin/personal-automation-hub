@@ -130,6 +130,10 @@ case $METHOD in
             terraform apply -auto-approve
             echo -e "${GREEN}✅ Full recreation completed!${NC}"
             
+            # Update variables after terraform apply
+            DOMAIN_NAME=$(terraform output -raw domain_name 2>/dev/null || echo "")
+            HTTPS_URL=$(terraform output -raw webhook_url_https 2>/dev/null || echo "")
+            
             # Wait a bit for the instance to be ready
             echo -e "${YELLOW}⏳ Waiting for instance to be ready...${NC}"
             sleep 30
@@ -174,6 +178,12 @@ case $METHOD in
         exit 1
         ;;
 esac
+
+# Update final variables to show current state
+cd "$PROJECT_DIR/terraform"
+ELASTIC_IP=$(terraform output -raw elastic_ip 2>/dev/null || echo "")
+DOMAIN_NAME=$(terraform output -raw domain_name 2>/dev/null || echo "")
+HTTPS_URL=$(terraform output -raw webhook_url_https 2>/dev/null || echo "")
 
 echo -e "${GREEN}🎯 Current webhook URLs:${NC}"
 echo "  Stable: http://$ELASTIC_IP:8000/api/v1/webhooks/notion-personal/create-task"
