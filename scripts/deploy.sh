@@ -145,8 +145,8 @@ case $METHOD in
                     elif [ $i -eq 12 ]; then
                         echo -e "${YELLOW}⚠️  HTTPS not ready yet, check logs manually${NC}"
                     else
-                        echo -e "${YELLOW}   Attempt $i/12 - waiting 10 seconds...${NC}"
-                        sleep 10
+                        echo -e "${YELLOW}   Attempt $i/12 - waiting 20 seconds...${NC}"
+                        sleep 20
                     fi
                 done
             else
