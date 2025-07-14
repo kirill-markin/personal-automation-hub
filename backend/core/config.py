@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     
     # Security
     webhook_api_key: str = Field(..., description="Webhook API key")
-    webhook_base_url: str = Field(..., description="Base URL for webhook endpoints (e.g., http://server.com:8000)")
+    webhook_base_url: str = Field(..., description="Base URL for webhook endpoints (e.g., https://server.com:8000). Must be https.")
     
     # Google Calendar shared credentials (optional)
     google_client_id: Optional[str] = Field(None, description="Google OAuth2 client ID")
