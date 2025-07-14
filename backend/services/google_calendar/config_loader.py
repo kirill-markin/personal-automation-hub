@@ -178,15 +178,13 @@ def load_multi_account_config() -> MultiAccountConfig:
         sync_flows = load_sync_flows_from_env()
         
         # Load polling settings
-        daily_sync_hour = int(os.environ.get("DAILY_SYNC_HOUR", "6"))
-        daily_sync_timezone = os.environ.get("DAILY_SYNC_TIMEZONE", "UTC")
+        sync_interval_minutes = int(os.environ.get("SYNC_INTERVAL_MINUTES", "60"))
         
         # Create configuration
         config = MultiAccountConfig(
             accounts=accounts,
             sync_flows=sync_flows,
-            daily_sync_hour=daily_sync_hour,
-            daily_sync_timezone=daily_sync_timezone
+            sync_interval_minutes=sync_interval_minutes
         )
         
         logger.info(f"Loaded configuration: {len(accounts)} accounts, {len(sync_flows)} sync flows")
@@ -218,21 +216,17 @@ def validate_environment_variables() -> Dict[str, str]:
         validation_results["sync_flows"] = f"Found {len(sync_flows)} sync flows"
         
         # Check polling settings
-        daily_sync_hour = int(os.environ.get("DAILY_SYNC_HOUR", "6"))
-        if not (0 <= daily_sync_hour <= 23):
-            validation_results["daily_sync_hour"] = "Invalid hour (must be 0-23)"
+        sync_interval_minutes = int(os.environ.get("SYNC_INTERVAL_MINUTES", "60"))
+        if not (1 <= sync_interval_minutes <= 1440):  # 1 minute to 24 hours
+            validation_results["sync_interval_minutes"] = "Invalid interval (must be 1-1440 minutes)"
         else:
-            validation_results["daily_sync_hour"] = f"Hour: {daily_sync_hour}"
-        
-        daily_sync_timezone = os.environ.get("DAILY_SYNC_TIMEZONE", "UTC")
-        validation_results["daily_sync_timezone"] = f"Timezone: {daily_sync_timezone}"
+            validation_results["sync_interval_minutes"] = f"Interval: {sync_interval_minutes} minutes"
         
         # Try to create full configuration to validate cross-references
         MultiAccountConfig(
             accounts=accounts,
             sync_flows=sync_flows,
-            daily_sync_hour=daily_sync_hour,
-            daily_sync_timezone=daily_sync_timezone
+            sync_interval_minutes=sync_interval_minutes
         )
         
         validation_results["validation"] = "All validations passed"
@@ -296,8 +290,7 @@ def get_configuration_summary() -> Dict[str, Any]:
     
     # Check polling settings
     summary["polling_settings"] = {
-        "daily_sync_hour": os.environ.get("DAILY_SYNC_HOUR", "6"),
-        "daily_sync_timezone": os.environ.get("DAILY_SYNC_TIMEZONE", "UTC")
+        "sync_interval_minutes": os.environ.get("SYNC_INTERVAL_MINUTES", "60")
     }
     
     # Try validation

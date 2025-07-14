@@ -63,8 +63,7 @@ class TestTransparencyLogic:
         self.config = MultiAccountConfig(
             accounts=[self.account1, self.account2],
             sync_flows=[self.sync_flow],
-            daily_sync_hour=6,
-            daily_sync_timezone="UTC"
+                    sync_interval_minutes=60
         )
         
         # Create mock account manager

@@ -26,8 +26,7 @@ class GoogleCalendarConfig(BaseModel):
     client_secret: Optional[str] = Field(None, description="Shared Google OAuth2 client secret")
     
     # Polling settings
-    daily_sync_hour: int = Field(default=6, description="Hour for daily sync (0-23)")
-    daily_sync_timezone: str = Field(default="UTC", description="Timezone for daily sync")
+    sync_interval_minutes: int = Field(default=60, description="Sync interval in minutes (default: hourly)")
     
     # Account discovery settings
     max_accounts: int = Field(default=10, description="Maximum number of accounts to scan for")
@@ -76,8 +75,7 @@ class Settings(BaseSettings):
     google_client_secret: Optional[str] = Field(None, description="Google OAuth2 client secret")
     
     # Google Calendar polling settings
-    daily_sync_hour: int = Field(default=6, description="Daily sync hour (0-23)")
-    daily_sync_timezone: str = Field(default="UTC", description="Daily sync timezone")
+    sync_interval_minutes: int = Field(default=60, description="Sync interval in minutes")
     
     # Account discovery limits
     max_google_accounts: int = Field(default=10, description="Maximum accounts to scan")
@@ -114,8 +112,7 @@ class Settings(BaseSettings):
         return GoogleCalendarConfig(
             client_id=self.google_client_id,
             client_secret=self.google_client_secret,
-            daily_sync_hour=self.daily_sync_hour,
-            daily_sync_timezone=self.daily_sync_timezone,
+                    sync_interval_minutes=self.sync_interval_minutes,
             max_accounts=self.max_google_accounts,
             max_sync_flows=self.max_sync_flows
         )
@@ -255,8 +252,7 @@ def get_environment_summary() -> Dict[str, Any]:
             'notion_configured': bool(settings.notion_api_key and settings.notion_database_id),
             'webhook_api_key_configured': bool(settings.webhook_api_key),
             'google_shared_credentials': bool(settings.google_client_id and settings.google_client_secret),
-            'daily_sync_hour': settings.daily_sync_hour,
-            'daily_sync_timezone': settings.daily_sync_timezone
+                    'sync_interval_minutes': settings.sync_interval_minutes
         }
         
         # Discover Google accounts

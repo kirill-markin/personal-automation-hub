@@ -116,16 +116,10 @@ variable "google_client_secret" {
 }
 
 # Calendar Sync Settings
-variable "daily_sync_hour" {
-  description = "Hour of day (0-23) for daily calendar sync polling"
+variable "sync_interval_minutes" {
+  description = "Sync interval in minutes (1-1440)"
   type        = number
-  default     = 6
-}
-
-variable "daily_sync_timezone" {
-  description = "Timezone for daily calendar sync schedule"
-  type        = string
-  default     = "UTC"
+  default     = 60
 }
 
 variable "max_google_accounts" {

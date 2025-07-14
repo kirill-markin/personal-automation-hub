@@ -10,8 +10,7 @@ GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret
 
 # Polling Schedule
-DAILY_SYNC_HOUR=6  # 6:00 AM
-DAILY_SYNC_TIMEZONE=UTC
+SYNC_INTERVAL_MINUTES=60  # Hourly sync
 
 # Account and sync flow configurations follow...
 ```
@@ -220,9 +219,8 @@ SYNC_FLOW_3_END_OFFSET=5
 ### Configuration
 
 ```bash
-# Custom polling schedule for different timezone
-DAILY_SYNC_HOUR=9  # 9:00 AM
-DAILY_SYNC_TIMEZONE=America/New_York  # Eastern Time
+# Custom polling schedule
+SYNC_INTERVAL_MINUTES=180  # Every 3 hours
 
 # Google Account 1: US East Coast
 GOOGLE_ACCOUNT_1_EMAIL=useast@company.com
@@ -266,12 +264,10 @@ SYNC_FLOW_2_END_OFFSET=45
 
 ```bash
 # Early morning sync for European timezones
-DAILY_SYNC_HOUR=4  # 4:00 AM
-DAILY_SYNC_TIMEZONE=Europe/London
+SYNC_INTERVAL_MINUTES=240  # Every 4 hours
 
 # Late evening sync for Asian timezones
-DAILY_SYNC_HOUR=22  # 10:00 PM
-DAILY_SYNC_TIMEZONE=Asia/Tokyo
+SYNC_INTERVAL_MINUTES=30   # Every 30 minutes
 ```
 
 ### Minimal vs. Maximum Buffer Examples

@@ -153,7 +153,7 @@ def test_sync_status_endpoint():
     
     # Verify scheduler info
     scheduler = result["scheduler"]
-    required_scheduler_fields = ["is_running", "daily_sync_hour", "daily_sync_timezone", 
+    required_scheduler_fields = ["is_running", "sync_interval_minutes", 
                                "next_run_time", "stats"]
     for field in required_scheduler_fields:
         assert field in scheduler, f"Scheduler should include {field}"

@@ -75,8 +75,7 @@ SYNC_FLOW_N_END_OFFSET=minutes_after_event_end
 
 #### Polling Schedule
 ```bash
-DAILY_SYNC_HOUR=6  # Hour of day to run daily sync (0-23)
-DAILY_SYNC_TIMEZONE=UTC  # Timezone for daily sync
+SYNC_INTERVAL_MINUTES=60  # Sync interval in minutes (default: hourly)
 ```
 
 #### Webhook Configuration

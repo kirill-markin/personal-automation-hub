@@ -1,11 +1,32 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.v1.webhooks.notion import router as notion_router
-from backend.api.v1.webhooks.google_calendar import router as google_calendar_router
+from backend.api.v1.webhooks.google_calendar import router as google_calendar_router, get_calendar_services
 from backend.api.v1.webhooks.gmail import router as gmail_router
 
-app = FastAPI(title="Personal Automation Hub")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan events."""
+    # Startup
+    try:
+        # Initialize calendar services immediately when app starts
+        # This ensures the polling scheduler starts running
+        get_calendar_services()
+        print("✅ Calendar services initialized - scheduler is now running")
+    except Exception as e:
+        print(f"❌ Failed to initialize calendar services: {e}")
+        # Don't crash the app if calendar initialization fails
+    
+    yield
+    
+    # Shutdown (if needed)
+    print("📴 Application shutting down")
+
+
+app = FastAPI(title="Personal Automation Hub", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(

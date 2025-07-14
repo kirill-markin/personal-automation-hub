@@ -349,8 +349,7 @@ def display_configuration_summary() -> None:
         # Display polling settings
         polling = summary.get("polling_settings", {})
         print(f"\nPolling Settings:")
-        print(f"  Daily sync hour: {polling.get('daily_sync_hour', 'Unknown')}")
-        print(f"  Timezone: {polling.get('daily_sync_timezone', 'Unknown')}")
+        print(f"  Sync interval: {polling.get('sync_interval_minutes', 'Unknown')} minutes")
         
         # Display validation status
         validation = summary.get("validation_status", "unknown")

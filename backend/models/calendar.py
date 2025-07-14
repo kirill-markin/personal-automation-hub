@@ -280,8 +280,7 @@ class SchedulerInfo(BaseModel):
     """Information about the polling scheduler."""
     
     is_running: bool = Field(..., description="Whether scheduler is running")
-    daily_sync_hour: int = Field(..., description="Hour of day for daily sync")
-    daily_sync_timezone: str = Field(..., description="Timezone for daily sync")
+    sync_interval_minutes: int = Field(..., description="Sync interval in minutes")
     next_run_time: Optional[str] = Field(None, description="Next scheduled run time (ISO format)")
     stats: SchedulerStats = Field(..., description="Scheduler statistics")
 
@@ -317,7 +316,7 @@ class JobHistoryEntry(BaseModel):
     run_time: str = Field(..., description="Job run time (ISO format)")
     success: bool = Field(..., description="Whether job was successful")
     error: Optional[str] = Field(None, description="Error message if job failed")
-    type: str = Field(..., description="Type of job (daily_sync, manual_sync, etc.)")
+    type: str = Field(..., description="Type of job (periodic_sync, manual_sync, etc.)")
 
 
 class WebhookSubscription(BaseModel):
@@ -439,14 +438,13 @@ class MultiAccountConfig(BaseModel):
     
     accounts: List[GoogleAccount] = Field(..., description="List of Google accounts")
     sync_flows: List[SyncFlow] = Field(..., description="List of sync flows")
-    daily_sync_hour: int = Field(default=6, description="Hour of day for daily polling (0-23)")
-    daily_sync_timezone: str = Field(default="UTC", description="Timezone for daily sync")
+    sync_interval_minutes: int = Field(default=60, description="Sync interval in minutes (default: hourly)")
     
     @model_validator(mode='after')
     def validate_fields(self) -> 'MultiAccountConfig':
-        # Validate daily_sync_hour
-        if not (0 <= self.daily_sync_hour <= 23):
-            raise ValueError('daily_sync_hour must be between 0 and 23')
+        # Validate sync_interval_minutes
+        if not (1 <= self.sync_interval_minutes <= 1440):  # 1 minute to 24 hours
+            raise ValueError('sync_interval_minutes must be between 1 and 1440 (24 hours)')
         
         # Validate accounts
         if not self.accounts:

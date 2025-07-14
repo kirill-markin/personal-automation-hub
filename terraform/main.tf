@@ -185,8 +185,7 @@ GOOGLE_CLIENT_ID=${var.google_client_id != null ? var.google_client_id : ""}
 GOOGLE_CLIENT_SECRET=${var.google_client_secret != null ? var.google_client_secret : ""}
 
 # Calendar Sync Settings
-DAILY_SYNC_HOUR=${var.daily_sync_hour}
-DAILY_SYNC_TIMEZONE=${var.daily_sync_timezone}
+SYNC_INTERVAL_MINUTES=${var.sync_interval_minutes}
 MAX_GOOGLE_ACCOUNTS=${var.max_google_accounts}
 MAX_SYNC_FLOWS=${var.max_sync_flows}
 

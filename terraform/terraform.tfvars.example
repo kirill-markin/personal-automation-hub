@@ -47,8 +47,7 @@ google_client_id = "your-google-client-id.apps.googleusercontent.com"
 google_client_secret = "your-google-client-secret"
 
 # Calendar Sync Settings (optional, uses defaults if not specified)
-daily_sync_hour = 6           # Hour for daily sync (0-23)
-daily_sync_timezone = "UTC"   # Timezone for daily sync
+sync_interval_minutes = 60    # Sync interval in minutes (default: hourly)
 max_google_accounts = 10      # Maximum accounts to scan for
 max_sync_flows = 50          # Maximum sync flows to scan for
 

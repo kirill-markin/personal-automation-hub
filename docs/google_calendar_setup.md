@@ -132,8 +132,7 @@ Add sync flow configuration to your `.env` file. Each sync flow represents one s
 
 ```bash
 # Polling schedule settings
-DAILY_SYNC_HOUR=6  # Run daily polling at 6:00 AM
-DAILY_SYNC_TIMEZONE=UTC
+SYNC_INTERVAL_MINUTES=60  # Run periodic sync every 60 minutes (hourly)
 
 # Sync Flow 1: Work calendar → Personal busy calendar
 SYNC_FLOW_1_NAME=Work to Personal Busy
@@ -220,8 +219,7 @@ google_account_2_client_secret = "your_client_secret_here"
 google_account_2_refresh_token = "1//04_refresh_token_for_account_2"
 
 # Sync flows
-daily_sync_hour = 6
-daily_sync_timezone = "UTC"
+sync_interval_minutes = 60
 
 sync_flow_1_name = "Work to Personal Busy"
 sync_flow_1_source_account_id = 2

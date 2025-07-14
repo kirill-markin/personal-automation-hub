@@ -68,19 +68,17 @@ class CalendarPollingScheduler:
             # Create scheduler
             self.scheduler = AsyncIOScheduler()
             
-            # Schedule daily sync job
+            # Schedule periodic sync job
             trigger = CronTrigger(
-                hour=self.config.daily_sync_hour,
-                minute=0,
-                second=0,
-                timezone=self.config.daily_sync_timezone
+                minute=f"*/{self.config.sync_interval_minutes}",
+                second=0
             )
             
             self.scheduler.add_job(  # type: ignore
-                self._run_daily_sync,
+                self._run_periodic_sync,
                 trigger=trigger,
-                id='daily_calendar_sync',
-                name='Daily Calendar Sync',
+                id='periodic_calendar_sync',
+                name='Periodic Calendar Sync',
                 replace_existing=True
             )
             
@@ -88,7 +86,7 @@ class CalendarPollingScheduler:
             self.scheduler.start()
             self.is_running = True
             
-            logger.info(f"Started polling scheduler - daily sync at {self.config.daily_sync_hour}:00 ({self.config.daily_sync_timezone})")
+            logger.info(f"Started polling scheduler - periodic sync every {self.config.sync_interval_minutes} minutes")
             
         except Exception as e:
             logger.error(f"Error starting polling scheduler: {e}")
@@ -112,11 +110,11 @@ class CalendarPollingScheduler:
             logger.error(f"Error stopping polling scheduler: {e}")
             raise PollingSchedulerError(f"Failed to stop polling scheduler: {e}")
     
-    async def _run_daily_sync(self) -> None:
-        """Run daily sync job."""
+    async def _run_periodic_sync(self) -> None:
+        """Run periodic sync job."""
         run_start_time = datetime.now()
         
-        logger.info("Starting daily calendar sync job")
+        logger.info("Starting periodic calendar sync job")
         
         try:
             # Update stats
@@ -251,8 +249,7 @@ class CalendarPollingScheduler:
         
         return SchedulerInfo(
             is_running=self.is_running,
-            daily_sync_hour=self.config.daily_sync_hour,
-            daily_sync_timezone=self.config.daily_sync_timezone,
+            sync_interval_minutes=self.config.sync_interval_minutes,
             next_run_time=next_run.isoformat() if next_run else None,
             stats=stats
         )
@@ -277,27 +274,25 @@ class CalendarPollingScheduler:
         }
         logger.info("Reset polling scheduler statistics")
     
-    def update_schedule(self, hour: int, timezone: str) -> None:
+    def update_schedule(self, interval_minutes: int) -> None:
         """Update the polling schedule.
         
         Args:
-            hour: Hour of day to run (0-23)
-            timezone: Timezone for the schedule
+            interval_minutes: Sync interval in minutes (1-1440)
         """
-        if not (0 <= hour <= 23):
-            raise ValueError("Hour must be between 0 and 23")
+        if not (1 <= interval_minutes <= 1440):
+            raise ValueError("Interval must be between 1 and 1440 minutes")
         
         # Update config
-        self.config.daily_sync_hour = hour
-        self.config.daily_sync_timezone = timezone
+        self.config.sync_interval_minutes = interval_minutes
         
         # Restart scheduler with new schedule if it's running
         if self.is_running:
-            logger.info(f"Updating schedule to {hour}:00 ({timezone})")
+            logger.info(f"Updating schedule to every {interval_minutes} minutes")
             self.stop()
             self.start()
         
-        logger.info(f"Updated schedule to {hour}:00 ({timezone})")
+        logger.info(f"Updated schedule to every {interval_minutes} minutes")
     
     def force_run_now(self) -> None:
         """Force run the daily sync job immediately.
@@ -310,7 +305,7 @@ class CalendarPollingScheduler:
         try:
             # Add one-time job to run immediately
             self.scheduler.add_job(  # type: ignore
-                self._run_daily_sync,
+                self._run_periodic_sync,
                 trigger='date',
                 run_date=datetime.now(),
                 id='manual_sync_now',
@@ -339,7 +334,7 @@ class CalendarPollingScheduler:
                 run_time=self.stats['last_run_time'],  # type: ignore
                 success=self.stats['last_run_success'],  # type: ignore
                 error=self.stats['last_run_error'],  # type: ignore
-                type='daily_sync'
+                type='periodic_sync'
             ))
         
         return history 
