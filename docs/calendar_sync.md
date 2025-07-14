@@ -79,6 +79,12 @@ DAILY_SYNC_HOUR=6  # Hour of day to run daily sync (0-23)
 DAILY_SYNC_TIMEZONE=UTC  # Timezone for daily sync
 ```
 
+#### Webhook Configuration
+```bash
+WEBHOOK_BASE_URL=http://your-server.com:8000  # Base URL for webhook endpoints
+WEBHOOK_API_KEY=your_secure_api_key  # API key for webhook authentication
+```
+
 ### Data Models
 
 #### Core Models

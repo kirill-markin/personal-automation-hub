@@ -53,6 +53,7 @@ In your `.env` file, configure the following variables:
 NOTION_API_KEY=secret_your_notion_api_key
 NOTION_DATABASE_ID=your_notion_database_id
 WEBHOOK_API_KEY=your_secure_api_key
+WEBHOOK_BASE_URL=http://localhost:8000
 ```
 
 #### Google Calendar Synchronization

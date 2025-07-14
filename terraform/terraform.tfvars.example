@@ -22,6 +22,7 @@ key_name = "your-key-pair-name"  # Required for SSH access
 
 # Security
 webhook_api_key = "your-webhook-api-key"
+webhook_base_url = "http://your-server.com:8000"  # Base URL for webhook endpoints
 
 # Domain Configuration (optional)
 domain_name = "your-domain.example.com"  # Set for HTTPS/SSL

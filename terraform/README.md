@@ -23,7 +23,7 @@ This directory contains Terraform configuration to deploy the Personal Automatio
    ```
 
 2. Edit `terraform.tfvars` and add your variables:
-   - Required: `notion_api_key`, `notion_database_id`, `webhook_api_key`, `key_name`
+   - Required: `notion_api_key`, `notion_database_id`, `webhook_api_key`, `webhook_base_url`, `key_name`
    - Optional: Override any default settings as needed
 
 ## HTTPS Configuration (Optional)
