@@ -309,7 +309,7 @@ async def run_scheduler_now(
 async def health_check() -> Dict[str, Any]:
     """Health check endpoint for monitoring system status."""
     try:
-        services = get_calendar_services()
+        _ = get_calendar_services()
         
         # Basic status
         status_info = {
