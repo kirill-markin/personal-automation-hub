@@ -164,6 +164,7 @@ resource "aws_instance" "app_server" {
 # OTHER CONFIGURATION
 # =============================================================================
 WEBHOOK_API_KEY=${var.webhook_api_key}
+WEBHOOK_BASE_URL=${var.webhook_base_url}
 
 OPENROUTER_API_KEY=${var.openrouter_api_key}
 

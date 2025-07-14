@@ -56,6 +56,11 @@ variable "webhook_api_key" {
   sensitive   = true
 }
 
+variable "webhook_base_url" {
+  description = "Base URL for webhook endpoints (e.g., http://server.com:8000)"
+  type        = string
+}
+
 variable "openrouter_api_key" {
   description = "The OpenRouter API key"
   type        = string

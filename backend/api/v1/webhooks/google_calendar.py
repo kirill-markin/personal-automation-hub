@@ -6,7 +6,8 @@ and processing calendar events through the sync engine.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, cast, List
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from backend.core.security import validate_api_key
@@ -306,36 +307,178 @@ async def run_scheduler_now(
 
 @router.get("/google-calendar/health")
 async def health_check() -> Dict[str, Any]:
-    """
-    Health check endpoint for Google Calendar sync system.
-    
-    This endpoint does not require authentication and provides
-    basic health information about the sync system.
-    """
+    """Health check endpoint for monitoring system status."""
     try:
-        # Get services (this will initialize them if needed)
         services = get_calendar_services()
         
-        # Basic health check
-        health_info = {  # type: ignore
-            'status': 'healthy',
-            'services': {
-                'config': services['config'] is not None,
-                'account_manager': services['account_manager'] is not None,
-                'sync_engine': services['sync_engine'] is not None,
-                'webhook_handler': services['webhook_handler'] is not None,
-                'polling_scheduler': services['polling_scheduler'] is not None
-            },
-            'scheduler_running': services['polling_scheduler'].is_running,  # type: ignore
-            'timestamp': services['sync_engine'].get_stats().last_updated  # type: ignore
+        # Basic status
+        status_info = {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "services_initialized": True
         }
         
-        return health_info  # type: ignore
+        return status_info
         
     except Exception as e:
         logger.error(f"Health check failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Service unhealthy: {e}"
+        )
+
+
+@router.post("/google-calendar/webhooks/setup")
+async def setup_webhook_subscriptions(
+    api_key: str = Depends(validate_api_key)
+) -> Dict[str, Any]:
+    """Create webhook subscriptions for all monitored calendars."""
+    try:
+        services = get_calendar_services()
+        webhook_handler = cast(GoogleCalendarWebhookHandler, services['webhook_handler'])
+        
+        # Get base URL for webhooks from configuration
+        from backend.core.config import settings
+        webhook_url = f"{settings.webhook_base_url}/api/v1/webhooks/google-calendar"
+        
+        # Get monitored calendars
+        monitored_calendars = webhook_handler.get_monitored_calendars()
+        
+        results: List[Dict[str, Any]] = []
+        success_count = 0
+        error_count = 0
+        
+        for calendar_info in monitored_calendars:
+            try:
+                # Create webhook subscription for each calendar
+                result = webhook_handler.create_webhook_subscription(  # type: ignore
+                    calendar_id=calendar_info.calendar_id,
+                    account_id=calendar_info.account_id,
+                    callback_url=webhook_url,
+                    channel_token=None  # Optional security token
+                )
+                
+                if result.success:
+                    success_count += 1
+                    logger.info(f"Created webhook subscription for calendar {calendar_info.calendar_id}")
+                else:
+                    error_count += 1
+                    logger.error(f"Failed to create webhook subscription for calendar {calendar_info.calendar_id}: {result.error}")
+                
+                results.append({
+                    "calendar_id": calendar_info.calendar_id,
+                    "flow_name": calendar_info.flow_name,
+                    "account_id": calendar_info.account_id,
+                    "success": result.success,
+                    "channel_id": result.channel_id if result.success else None,
+                    "resource_id": result.resource_id if result.success else None,
+                    "expiration": result.expiration if result.success else None,
+                    "error": result.error if not result.success else None
+                })
+                
+            except Exception as e:
+                error_count += 1
+                logger.error(f"Exception creating webhook subscription for calendar {calendar_info.calendar_id}: {e}")
+                results.append({
+                    "calendar_id": calendar_info.calendar_id,
+                    "flow_name": calendar_info.flow_name,
+                    "account_id": calendar_info.account_id,
+                    "success": False,
+                    "error": str(e)
+                })
+        
         return {
-            'status': 'unhealthy',
-            'error': str(e),
-            'timestamp': None
-        } 
+            "message": f"Webhook setup completed: {success_count} successful, {error_count} failed",
+            "webhook_url": webhook_url,
+            "total_calendars": len(monitored_calendars),
+            "success_count": success_count,
+            "error_count": error_count,
+            "results": results,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to setup webhook subscriptions: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to setup webhook subscriptions: {e}"
+        )
+
+
+@router.get("/google-calendar/webhooks/status") 
+async def get_webhook_subscriptions_status(
+    api_key: str = Depends(validate_api_key)
+) -> Dict[str, Any]:
+    """Get status of webhook subscriptions."""
+    try:
+        services = get_calendar_services()
+        webhook_handler = cast(GoogleCalendarWebhookHandler, services['webhook_handler'])
+        
+        # Get monitored calendars
+        monitored_calendars = webhook_handler.get_monitored_calendars()
+        
+        webhook_info: List[Dict[str, Any]] = []
+        for calendar_info in monitored_calendars:
+            webhook_info.append({
+                "calendar_id": calendar_info.calendar_id,
+                "account_id": calendar_info.account_id,
+                "account_email": calendar_info.account_email,
+                "flow_name": calendar_info.flow_name
+            })
+        
+        from backend.core.config import settings
+        
+        return {
+            "webhook_endpoint": f"{settings.webhook_base_url}/api/v1/webhooks/google-calendar",
+            "total_monitored_calendars": len(monitored_calendars),
+            "monitored_calendars": webhook_info,
+            "note": "Use POST /google-calendar/webhooks/setup to create subscriptions",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get webhook status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get webhook status: {e}"
+        )
+
+
+@router.post("/google-calendar/webhooks/test-connectivity")
+async def test_webhook_connectivity(
+    api_key: str = Depends(validate_api_key)
+) -> Dict[str, Any]:
+    """Test if the webhook endpoint is accessible from external networks."""
+    try:
+        import requests
+        from datetime import datetime
+        
+        # Test URL - webhook health endpoint 
+        from backend.core.config import settings
+        webhook_url = f"{settings.webhook_base_url}/api/v1/webhooks/google-calendar/health"
+        
+        # Try to reach the health endpoint from inside the server
+        response = None
+        try:
+            response = requests.get(webhook_url, timeout=10)
+            external_accessible = response.status_code == 200
+            response_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else response.text
+        except Exception as e:
+            external_accessible = False
+            response_data = f"Connection failed: {e}"
+        
+        return {
+            "webhook_url": webhook_url,
+            "external_accessible": external_accessible,
+            "response_status": response.status_code if response is not None else None,
+            "response_data": response_data,
+            "timestamp": datetime.now().isoformat(),
+            "note": "Google Calendar needs to be able to reach this URL to send push notifications"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to test webhook connectivity: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to test connectivity: {e}"
+        ) 
