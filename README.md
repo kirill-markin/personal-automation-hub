@@ -27,7 +27,7 @@ A personal automation hub for integrating various services.
    - Unix/MacOS: `source .venv/bin/activate`
 4. Install uv: `pip install uv`
 5. Install dependencies: `uv pip install -e ".[dev]"`
-6. Copy `.env.example` to `.env` and fill in your API keys
+6. Create a `.env` file and fill in your API keys
 
 ## Configuration
 

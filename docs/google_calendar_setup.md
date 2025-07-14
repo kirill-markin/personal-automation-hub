@@ -47,10 +47,10 @@ This guide walks you through setting up Google Calendar synchronization and Gmai
 
 ## Step 2: Environment Configuration
 
-### 2.1 Copy Environment Template
+### 2.1 Create Environment File
 
 ```bash
-cp .env.example .env
+touch .env
 ```
 
 ### 2.2 Add Google OAuth2 Credentials
